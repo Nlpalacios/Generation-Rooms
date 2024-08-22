@@ -90,7 +90,7 @@ public abstract class EnemyBasicStates : MonoBehaviour
     #region State Machine
     public void SetState(IEnemyState newState)
     {
-        Debug.Log($"ENEMY STATE: {newState}");
+        //Debug.Log($"ENEMY STATE: {newState}");
 
         currentState?.ExitState(this);
         currentState = newState;

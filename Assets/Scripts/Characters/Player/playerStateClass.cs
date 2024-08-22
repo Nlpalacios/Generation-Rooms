@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class playerStates : MonoBehaviour
+public class playerStateClass : MonoBehaviour
 {
     //None
 }

@@ -4,7 +4,7 @@ using UnityEngine;
 public class AnimationControl : MonoBehaviour
 {
     [Space]
-    [Header("Names of attributes in animator")]
+    [Header("Attributes names in animator")]
     [SerializeField] string animatorMoveX;
     [SerializeField] string animatorMoveY;
 
@@ -17,13 +17,13 @@ public class AnimationControl : MonoBehaviour
     private Rigidbody2D rbCharacter;
     private Vector2 lastMoveDirection = Vector2.down;
 
-    private void OnEnable()
+    private void Start()
     {
         animator = GetComponent<Animator>();
         rbCharacter = GetComponent<Rigidbody2D>();
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
         CheckDirection();
     }

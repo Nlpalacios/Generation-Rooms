@@ -25,10 +25,8 @@ public class CombatSystem : MonoBehaviour
     [SerializeField] float distanceY_Top;
     [SerializeField] float distanceY_Down;
 
-
     [Header("Weapons")]
     [SerializeField] private List<SO_WeaponManager> weaponsComponents = new List<SO_WeaponManager>();
-
 
     //RECTANGLE
     private Vector2 TopRightcorner;
@@ -37,10 +35,9 @@ public class CombatSystem : MonoBehaviour
 
     //Animations
     private Animator animator;
-    Player playerReference;
 
     //Attack
-    float delay;
+    private float delay = 0f;
 
     public PlayerWeapon ActualWeapon { get => actualWeapon; set => actualWeapon = value; }
 
@@ -49,7 +46,6 @@ public class CombatSystem : MonoBehaviour
     private void OnEnable()
     {
         animator = GetComponent<Animator>(); 
-        playerReference = GetComponent<Player>();
     }
 
     private void OnDisable()
@@ -72,7 +68,8 @@ public class CombatSystem : MonoBehaviour
         }
 
         delay = Time.time + GetWeapon().delay;
-        directionAttack = playerReference.GetDirection;
+        //directionAttack = playerReference.GetDirection;
+
         AnimationClip clip = GetAnimationFromDirection(ActualWeapon);
         if (!clip) { 
             Debug.Log($"ANIMATION NULL IN {transform.name}"); 
@@ -80,33 +77,24 @@ public class CombatSystem : MonoBehaviour
         }
 
         if (!isAttack)
-        StartCoroutine(PlayAttackAnimation(clip));
+            StartCoroutine(PlayAttackAnimation(clip));
     }
 
-    void DetectionAttack()
+    //Method for frame in animation
+    public void DetectionAttack()
     {
         UpdateRectangle();
-        Collider2D collider = Physics2D.OverlapArea(TopRightcorner, BottomLefttcorner, layerEnemies);
-        if (collider && isAttack)
+        Collider2D[] colliders = Physics2D.OverlapAreaAll(TopRightcorner, BottomLefttcorner, layerEnemies);
+
+        foreach (var collider in colliders)
         {
+            if (!collider || !isAttack) continue;
+
             HealthControl healthEnemy = collider.GetComponent<HealthControl>();
             if (healthEnemy == null) return;
 
             healthEnemy.RemoveHearts(GetWeapon().damage);
-            Debug.Log("ATTACK COMPLETE");
         }
-
-        //foreach (var collider in colliders)
-        //{
-        //    if (collider && isAttack)
-        //    {
-        //        HealthControl healthEnemy = collider.GetComponent<HealthControl>();
-        //        if (healthEnemy == null) return;
-
-        //        healthEnemy.RemoveHearts(GetWeapon().damage);
-        //        Debug.Log("ATTACK COMPLETE");
-        //    }
-        //}
     }
 
     #endregion
@@ -117,7 +105,7 @@ public class CombatSystem : MonoBehaviour
     {
         isAttack = true;
         animator.Play(attackAnimation.name);
-        DetectionAttack();
+        //DetectionAttack();
 
         yield return new WaitForSeconds(attackAnimation.length);
         animator.Play("BT_Idle");
@@ -127,8 +115,6 @@ public class CombatSystem : MonoBehaviour
     AnimationClip GetAnimationFromDirection(PlayerWeapon typeWeapon)
     {
         SO_WeaponManager Attributes = GetWeapon();
-        if (!playerReference) return null;
-
         if (directionAttack.x != 0)
         {
             return directionAttack.x > 0 ? Attributes.attack_Right : Attributes.attack_Left;
@@ -157,6 +143,7 @@ public class CombatSystem : MonoBehaviour
     {
         float distance = GetWeapon().maxScope * (directionAttack.x >= 1 ? 1 : -1);
 
+        /*
         switch (directionAttack)
         {
             case Vector2 v when v == Vector2.down:
@@ -194,6 +181,20 @@ public class CombatSystem : MonoBehaviour
                 TopRightcorner.y    = transform.position.y + distanceY_Top;
                 break;
         }
+        */
+
+        float xOffset = directionAttack.x * GetWeapon().maxScope;
+        float yOffset = directionAttack.y * GetWeapon().maxScope;
+
+        BottomLefttcorner = new Vector2(
+        transform.position.x - distanceX_Left + (directionAttack.x < 0 ? xOffset : 0),
+        transform.position.y - distanceY_Down + (directionAttack.y < 0 ? yOffset : 0)
+    );
+
+        TopRightcorner = new Vector2(
+            transform.position.x + distanceX_Right + (directionAttack.x > 0 ? xOffset : 0),
+            transform.position.y + distanceY_Top + (directionAttack.y > 0 ? yOffset : 0)
+        );
     }
 
     private void OnDrawGizmos()

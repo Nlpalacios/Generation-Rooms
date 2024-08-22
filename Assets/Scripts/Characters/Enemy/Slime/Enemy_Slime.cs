@@ -7,11 +7,11 @@ public class Enemy_Slime : EnemyBasicStates
     [Header("Time stopping")]
     [SerializeField] private float timeAnimStopping;
     [SerializeField] private float minScale = 0.6F;
-    private bool isPowerUp = false;
+    //private bool isPowerUp = false;
 
     private void Start()
     {
-        EnemyManager.Instance.OnSlimePowerUp += powerUp;
+        //EnemyManager.Instance.OnSlimePowerUp += powerUp;
     }
 
     public override void Attack()

@@ -14,16 +14,16 @@ public class EnemyManager : MonoBehaviour
     private Dictionary<typeEnemy, GameObject> keyEnemyType = new Dictionary<typeEnemy, GameObject>();
     private Dictionary<typeEnemy, List<GameObject>> enemyPools = new Dictionary<typeEnemy, List<GameObject>>();
 
-    [Header("Properties - Slime event")]
-    [SerializeField] private int numSlimeForUnion;
+    //[Header("Properties - Slime event")]
+    //[SerializeField] private int numSlimeForUnion;
 
 
     //Singleton
     public static EnemyManager Instance { get; private set; }
 
     //POWER UPS FOR ENEMIES
-    public delegate void PowerUpEnemies();
-    public event PowerUpEnemies OnSlimePowerUp;
+    //public delegate void PowerUpEnemies();
+    //public event PowerUpEnemies OnSlimePowerUp;
 
 
     void Awake()

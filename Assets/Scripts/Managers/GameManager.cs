@@ -1,4 +1,7 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -18,26 +21,28 @@ public class GameManager : MonoBehaviour
     //Private variables
     private Camera playerCamera;
 
-    //Reference regeneration rooms
-    private GeneratorRooms generatorRooms;
-
     //Singleton
     public static GameManager Instance { get; private set; }
+
+    //
     public GameObject GetCurrentRoom { get => currentRoom; }
-    public Player GetPlayer { get => playerReference; }
+    public Player GetPlayer => playerReference; 
     public playerState GetCurrentState { get => gameState; set => gameState = value; }
     
 
     //InyectionDependence  || MANAGERS
     private ContainerDependences container;
 
+    //Reference managers
+    private GeneratorRooms generatorRooms;
+    private EnemyManager enemyManager;
+
     //EVENTS - DELEGATES --------------------------------------------
-    public delegate void CameraMoving(bool isMoving);
-    public event CameraMoving OnCameraMoving;
+    public Action<bool> OnCameraMoving;
 
     
-    #region Star
-    // Start is called before the first frame update
+    #region Star Game
+
     void Awake()
     {
         if (Instance == null)
@@ -51,39 +56,70 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
             return;
         }
-
     }
 
     private void Start()
     {
         playerCamera = Camera.main;
-        generatorRooms = GeneratorRooms.Instance;
-        if (!generatorRooms || !playerReference) 
-        {
-            Debug.LogError($"INVALID REFERENCE IN {transform.name}");
-        }
+        InitSingletons();
+        ValidateReferences();
 
-
-        Resolve<IStateManagment>().SetPlayerState(playerState.Exploration);
+        SetPlayerState(playerState.Exploration);
     }
 
+    private void ValidateReferences()
+    {
+        if (!playerReference)
+        {
+            Debug.LogError($"INVALID PLAYER IN GAME MANAGER");
+        }
+
+        if (!playerCamera)
+        {
+            Debug.LogError($"INVALID CAMERA IN GAME MANAGER");
+        }
+    }
+
+    #endregion
+
+    #region Dependences and Managers
+
+    private void InitSingletons()
+    {
+        var instanceTypes = new List<Type> { typeof(GeneratorRooms),
+                                             typeof(EnemyManager)
+        };
+
+        List<GameObject> instances = new List<GameObject>();
+
+        foreach (var type in instanceTypes)
+        {
+            var instance = (MonoBehaviour)type.GetProperty("Instance").GetValue(null, null);
+            instances.Add(instance.gameObject);
+        }
+
+        if (instances.Any(n => n == null))
+        {
+            Debug.LogError("INSTANCE ERROR");
+        }
+    }
     private void InitializeManagers()
     {
         container = new ContainerDependences();
 
-        // Register types and instances here
         container.Register<IStateManagment, StateManager>();
-    }
+        // Register MORE types and instances here
 
+    }
     public T Resolve<T>()
     {
         return container.Resolve<T>();
     }
 
-
     #endregion
 
     #region Rooms
+
     // Actual Room
     public void SaveActualRoom(GameObject room)
     {
@@ -102,7 +138,13 @@ public class GameManager : MonoBehaviour
 
     #endregion
 
-    #region Player
+    #region Player State
+
+    public void SetPlayerState(playerState newState)
+    {
+        Resolve<IStateManagment>().SetPlayerState(newState);
+        gameState = newState;
+    }
 
     #endregion
 }

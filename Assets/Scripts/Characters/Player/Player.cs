@@ -13,10 +13,8 @@ public class Player : MonoBehaviour
     [Header("Player Attributes")]
     [SerializeField] [Range(0, 10)] private float playerSpeed = 6;
 
-    //Private Variables
-
     //Default PLAYER direction
-    Vector2 actualDirection = Vector2.down;
+    private Vector2 actualDirection = Vector2.down;
 
     //Input
     private InputAction IA_playerMove;
@@ -33,7 +31,6 @@ public class Player : MonoBehaviour
     //UNITY COMPONENTS
     private Rigidbody2D rbPlayer;
 
-
     public Vector2 GetDirection { get => actualDirection; }
 
     #region Enable / Disable
@@ -49,8 +46,9 @@ public class Player : MonoBehaviour
 
         if (InputManager.Instance )
         {
-            IA_playerMove = InputManager.Instance.GetInputActionMovement();
-            IA_PlayerAttack = InputManager.Instance.GetInputActionAttack();
+            IA_playerMove = InputManager.Instance.GetInputAction(InputActionsEnum.Movement);
+            IA_PlayerAttack = InputManager.Instance.GetInputAction(InputActionsEnum.Attack);
+            if (IA_PlayerAttack == null || IA_playerMove == null) return;
 
             // Subscribe to the performed and canceled events
             IA_playerMove.Enable();
@@ -82,18 +80,6 @@ public class Player : MonoBehaviour
         {
             Debug.LogWarning($"NO MANAGERS IN -{transform.name}-");
         }
-    }
-
-    private void Update()
-    {
-        //if (Input.GetKeyDown(KeyCode.Q)) {
-        //    GameManager.Instance.Resolve<IStateManagment>().SetPlayerState(playerState.OpenCards);
-        //}
-
-        //if (Input.GetKeyDown(KeyCode.E))
-        //{
-        //    GameManager.Instance.Resolve<IStateManagment>().SetPlayerState(playerState.Exploration);
-        //}
     }
 
     private void FixedUpdate()
@@ -151,6 +137,6 @@ public class Player : MonoBehaviour
     //Death -------------------------------------------
     void Death()
     {
-        Debug.Log("Murio");
+        Debug.LogWarning("PLAYER DEATH");
     }
 }

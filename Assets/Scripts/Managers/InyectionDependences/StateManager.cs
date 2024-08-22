@@ -19,25 +19,21 @@ public class StateManager : IStateManagment
         switch (currentState)
         {
             case playerState.Default:
-                Debug.Log($"Player State: {currentState}");
                 break;
 
             case playerState.Exploration:
-                Debug.Log($"Player State: {currentState}");
                 Exploration();
                 break;
 
             case playerState.Atack:
-                Debug.Log($"Player State: {currentState}");
                 break;
 
             case playerState.OpenCards:
-                Debug.Log($"Player State: {currentState}");
                 OpenCards();
                 break;
         }
 
-        GameManager.Instance.GetCurrentState = currentState;
+        Debug.LogWarning($"NEW: Player State - {currentState}");
     }
 
     #region Exploration
