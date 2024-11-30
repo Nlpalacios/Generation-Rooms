@@ -18,6 +18,10 @@ public class EnemyManager : MonoBehaviour
     //Singleton
     public static EnemyManager Instance { get; private set; }
 
+    private void OnEnable()
+    {
+        EventManager.Instance.Subscribe(GameWorldEvents.OnChangeRoom, DisableAllEnemies);
+    }
 
     void Awake()
     {
@@ -114,6 +118,15 @@ public class EnemyManager : MonoBehaviour
     }
 
     #endregion
+
+    private void DisableAllEnemies(object call)
+    {
+        foreach (var type in enemyPools.Keys)
+        {
+            enemyPools[type].ForEach(enemy => { enemy.SetActive(false); });
+        }
+    }
+
 
     private void Update()
     {

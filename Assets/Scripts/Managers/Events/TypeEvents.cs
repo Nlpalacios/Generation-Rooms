@@ -10,7 +10,8 @@ public class TypeEvents
 public enum GameWorldEvents
 {
     OnChangeState,
-    OnCameraShake
+    OnCameraShake,
+    OnChangeRoom
 }
 
 [Serializable]

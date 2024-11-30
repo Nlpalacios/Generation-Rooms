@@ -66,8 +66,6 @@ public abstract class EnemyBasicStates : MonoBehaviour
         currentHealt.SetMaxHeart = basicParameters.maxHearts;
         currentHealt.OnDeathCharacter += OnDeath;
         currentHealt.OnHealthChanged += OnHealthChanged;
-
-        //transform.localScale = Vector3.one;
     }
 
     public void InitEnemy()

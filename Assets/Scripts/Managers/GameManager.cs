@@ -123,6 +123,7 @@ public class GameManager : MonoBehaviour
         if (room != GetCurrentRoom)
         {
             currentRoom = room;
+            EventManager.Instance.TriggerEvent(GameWorldEvents.OnChangeRoom, room);
         }
     }
 
