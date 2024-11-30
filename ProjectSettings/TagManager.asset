@@ -13,9 +13,9 @@ TagManager:
   - UI
   - OnlyScene
   - Enemy
-  - 
-  - 
-  - 
+  - Walls
+  - Doors
+  - Floors
   - 
   - 
   - 

@@ -33,7 +33,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -8.009989, y: -0.8337693, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.3, y: 1.3, z: 1.3}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -127,7 +127,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: -0.15}
+  m_Offset: {x: -0.0017700195, y: -0.1606225}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -137,7 +137,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.8, y: 0.6}
+  m_Size: {x: 0.50611115, y: 0.4512853}
   m_EdgeRadius: 0
 --- !u!95 &6153251174136175234
 Animator:
@@ -222,11 +222,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 35cfe121d01efe543a2098185b967145, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enemyParameters: {fileID: 11400000, guid: 89140405e76d7ff4683cf2bea6bc0674, type: 2}
+  basicParameters: {fileID: 11400000, guid: 89140405e76d7ff4683cf2bea6bc0674, type: 2}
   isCanMove: 1
   currentHealt: {fileID: 0}
+  useFlip: 0
+  haveAttackState: 0
+  playerPosition: {x: 0, y: 0, z: 0}
+  canAttack: 1
   timeAnimStopping: 0.5
-  minScale: 0.6
+  minScale: 0.8
 --- !u!114 &1241067588137324720
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -236,9 +240,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 2310293093283513670}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a021bc685d22b514b858b1315918d16d, type: 3}
+  m_Script: {fileID: 11500000, guid: 507ae203d9747654e97c9ba6556ecaf0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   timeReceiveAttack: 0.3
   forceMagnitude: 2
+  actual_hearts: 0
   max_hearts: 5

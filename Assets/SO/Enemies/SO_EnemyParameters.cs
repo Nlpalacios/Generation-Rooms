@@ -6,8 +6,9 @@ public class SO_EnemyParameters : ScriptableObject
     [Header("Type")]
     public typeEnemy enemyType;
 
-    [Header("Damage")]
+    [Header("Attack")]
     public int damage;
+    public float timeDelay;
 
     [Header("Healt")]
     public int maxHearts;
@@ -17,9 +18,9 @@ public class SO_EnemyParameters : ScriptableObject
     public float attackRange;
 }
 
-public enum typeEnemy
+public enum typeEnemy: short
 {
-    Slime,
-    Knight,
-    Wasp
+    Slime     = 1,
+    Wasp      = 2,
+    Knight    = 3
 }

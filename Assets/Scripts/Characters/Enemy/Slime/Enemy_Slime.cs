@@ -1,25 +1,16 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.AI;
 
 public class Enemy_Slime : EnemyBasicStates
 {
     [Header("Time stopping")]
     [SerializeField] private float timeAnimStopping;
-    [SerializeField] private float minScale = 0.6F;
-    //private bool isPowerUp = false;
+    [SerializeField] private float minScale = 0.8f;
+    private bool isStopped = false;
 
     private void Start()
     {
-        //EnemyManager.Instance.OnSlimePowerUp += powerUp;
-    }
-
-    public override void Attack()
-    {
-    }
-
-    public override void Chase()
-    {
+        base.haveAttackState = false;
     }
 
     public IEnumerator StopAnimation()
@@ -32,11 +23,13 @@ public class Enemy_Slime : EnemyBasicStates
 
         NMA_agent.isStopped = true;
         enemyAnim.enabled = false;
+        isStopped = true;
 
         yield return new WaitForSeconds(timeAnimStopping);
 
         NMA_agent.isStopped = false;
         enemyAnim.enabled = true;
+        isStopped = false;
     }
 
     public override void OnHealthChanged(int damage)
@@ -49,9 +42,7 @@ public class Enemy_Slime : EnemyBasicStates
         }
 
         currentScale = Mathf.Max(currentScale -= 0.2f, minScale);
-        int newHearts = this.currentHealt.GetCurrentHealth;
-        newHearts -= 2;
-        
+        int newHearts = this.currentHealt.GetCurrentHealth - damage;
         
         Vector3 posClone = this.transform.localPosition;
         GameObject enemy = EnemyManager.Instance.InstantiateEnemy(posClone, typeEnemy.Slime);
@@ -65,7 +56,7 @@ public class Enemy_Slime : EnemyBasicStates
 
     public void ChangeScaleAndHealth(float scale, int health)
     {
-        if (scale <= .4f)
+        if (scale <= minScale)
         {
             OnDeath();
             return;
@@ -74,24 +65,29 @@ public class Enemy_Slime : EnemyBasicStates
         this.transform.localScale = new Vector3(scale, scale, scale);
     }
 
-
-
-    //PROXIMAMENTE
-    //IDEA: SI HAY UN MINIMO DE SLIMES Y SON PEQUEÑOS, ESCOGER A UNO PARA QUE TODOS SE UNAN A EL Y SE HAGAN EL DOBLE DE GRANDE, ASI MISMO SU ATAQUE
-    //private void OnCollisionEnter2D(Collision2D collision)
-    //{
-    //    if (!isPowerUp) return;
-
-    //    Enemy_Slime slime = collision.gameObject.GetComponent<Enemy_Slime>();
-
-    //    if (slime)
-    //    {
-    //       powerUp();
-    //    }
-    //}
-    public void powerUp()
+    private void OnCollisionEnter2D(Collision2D collision)
     {
-
+        if (collision != null && !isStopped && collision.gameObject.TryGetComponent(out Player player))
+        {
+            base.AttackPlayer();
+        }
     }
 
+    public override void Chase() {}
+    public override void Attack() {}
+    public override void StartAttack() {}
 }
+
+//PROXIMAMENTE
+//IDEA: SI HAY UN MINIMO DE SLIMES Y SON PEQUEÑOS, ESCOGER A UNO PARA QUE TODOS SE UNAN A EL Y SE HAGAN EL DOBLE DE GRANDE, ASI MISMO SU ATAQUE
+//private void OnCollisionEnter2D(Collision2D collision)
+//{
+//    if (!isPowerUp) return;
+
+//    Enemy_Slime slime = collision.gameObject.GetComponent<Enemy_Slime>();
+
+//    if (slime)
+//    {
+//       powerUp();
+//    }
+//}

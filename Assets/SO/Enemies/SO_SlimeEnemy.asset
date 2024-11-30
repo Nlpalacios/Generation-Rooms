@@ -12,8 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b52578d12cf653c46ae3b6acd4cf6874, type: 3}
   m_Name: SO_SlimeEnemy
   m_EditorClassIdentifier: 
-  enemyType: 0
+  enemyType: 1
   damage: 1
+  timeDelay: 0
   maxHearts: 6
   speed: 1.5
-  attackRange: 1
+  attackRange: 0

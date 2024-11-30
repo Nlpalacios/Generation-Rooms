@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyType: 2
   damage: 2
+  timeDelay: 3
   maxHearts: 4
   speed: 5
   attackRange: 5

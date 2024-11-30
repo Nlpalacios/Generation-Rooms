@@ -1,4 +1,5 @@
-using Unity.IO.LowLevel.Unsafe;
+using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -8,7 +9,7 @@ using UnityEngine.AI;
 public abstract class EnemyBasicStates : MonoBehaviour
 {
     [Header("SO - Basic parameters")]
-    [SerializeField] public SO_EnemyParameters enemyParameters;
+    [SerializeField] public SO_EnemyParameters basicParameters;
 
     //Components
     [HideInInspector] public bool isCanMove = true;
@@ -18,21 +19,32 @@ public abstract class EnemyBasicStates : MonoBehaviour
     private IEnemyState ChaseState = new ChaseState();
     private IEnemyState AttackState = new AttackState();
 
-
     //This instance
-    private IEnemyState currentState;
+    private IEnemyState IcurrentState;
 
     public NavMeshAgent NMA_agent { get; private set; }
     public GameManager gameManager { get; private set; }
     public Animator enemyAnim { get; private set; }
-   
 
+    //Conditionals
+    public bool useFlip = false;
+    public bool haveAttackState = true;
+
+    //Public parameters
+    [HideInInspector] public Vector3 playerPosition;
+    [HideInInspector] public bool canAttack = true; // delay for attack
+    private bool coroutineDelayActive = false;
+
+    //private parameters
+    private bool facingRight = true;
 
     //INTERFACE
-    public EnemyStates currentStateEnum => currentState != null ? (EnemyStates)System.Enum.Parse(typeof(EnemyStates),
-                                           currentState.GetType().Name.Replace("State", "")) : EnemyStates.Idle;
-    public SO_EnemyParameters parameters => enemyParameters;
+    public EnemyStates CurrentState => IcurrentState != null ? (EnemyStates)System.Enum.Parse(typeof(EnemyStates),
+                                           IcurrentState.GetType().Name.Replace("State", "")) : EnemyStates.Idle;
+    public SO_EnemyParameters parameters => basicParameters;
 
+    //Events 
+    public Action FinalizeDaley;
 
     #region Start Enemy
     private void InitVariables()
@@ -49,17 +61,13 @@ public abstract class EnemyBasicStates : MonoBehaviour
             return;
         }
 
-        NMA_agent.updateRotation = false;
-        NMA_agent.updateUpAxis = false;
+        ResetNavMeshValues();
 
-        NMA_agent.speed = enemyParameters.speed;
-        NMA_agent.stoppingDistance = enemyParameters.attackRange;
-
-        currentHealt.SetMaxHeart = enemyParameters.maxHearts;
+        currentHealt.SetMaxHeart = basicParameters.maxHearts;
         currentHealt.OnDeathCharacter += OnDeath;
         currentHealt.OnHealthChanged += OnHealthChanged;
 
-        transform.localScale = Vector3.one;
+        //transform.localScale = Vector3.one;
     }
 
     public void InitEnemy()
@@ -71,7 +79,7 @@ public abstract class EnemyBasicStates : MonoBehaviour
 
     #endregion
 
-    #region Events for Healt
+    #region Events of Healt
     public void OnDeath()
     {
         //Add animation death
@@ -80,21 +88,45 @@ public abstract class EnemyBasicStates : MonoBehaviour
 
     public abstract void OnHealthChanged(int damage);
 
+    public void AttackPlayer()
+    {
+        EventManager.Instance.TriggerEvent(PlayerEvents.OnReceiveDamage, basicParameters.damage);
+    }
+
     #endregion
 
     private void Update()
     {
-        currentState?.UpdateState(this);
+        playerPosition = GameManager.Instance.GetPlayer.transform.position;
+        IcurrentState?.UpdateState(this);
+
+        if (useFlip)
+            Flip();
+
+        if (canAttack || coroutineDelayActive) return;
+        StartCoroutine(CoroutineDelayAttack());
     }
+
+    #region Attack
+
+    IEnumerator CoroutineDelayAttack()
+    {
+        coroutineDelayActive = true;
+        yield return new WaitForSeconds(basicParameters.timeDelay);
+
+        canAttack = true;
+        coroutineDelayActive = false;
+        FinalizeDaley?.Invoke();
+    }
+
+    #endregion
 
     #region State Machine
     public void SetState(IEnemyState newState)
     {
-        //Debug.Log($"ENEMY STATE: {newState}");
-
-        currentState?.ExitState(this);
-        currentState = newState;
-        currentState?.EnterState(this);
+        IcurrentState?.ExitState(this);
+        IcurrentState = newState;
+        IcurrentState?.EnterState(this);
     }
 
     //Add more for new states
@@ -106,6 +138,7 @@ public abstract class EnemyBasicStates : MonoBehaviour
                 break;
 
             case EnemyStates.Attack:
+                StartAttack();
                 SetState(AttackState);
                 break;
 
@@ -115,8 +148,72 @@ public abstract class EnemyBasicStates : MonoBehaviour
         }
     }
 
+    public abstract void StartAttack();
     public abstract void Chase();
     public abstract void Attack();
 
     #endregion
+
+    #region NavMesh
+
+    public void ResetNavMeshValues()
+    {
+        NMA_agent.updateRotation = false;
+        NMA_agent.updateUpAxis = false;
+
+        NMA_agent.speed = basicParameters.speed;
+        NMA_agent.stoppingDistance = basicParameters.attackRange;
+    }
+
+    public bool isActivateNavMesh()
+    {
+        return NMA_agent.isActiveAndEnabled;
+    }
+
+    public void switchNavMesh()
+    {
+        NMA_agent.enabled =! NMA_agent.enabled;
+    }
+
+    public void DesactivateNavMesh()
+    {
+        NMA_agent.enabled = false;
+    }
+
+    public void ActivateNavMesh()
+    {
+        NMA_agent.enabled = true;
+    }
+
+    #endregion
+
+    public void ChaseBasicPlayer(Action OnEnterRange)
+    {
+        if (!NMA_agent.isActiveAndEnabled || !isCanMove) return;
+
+        NMA_agent.SetDestination(playerPosition);
+        float distancePlayer = Vector3.Distance(transform.position, playerPosition);
+
+        if (distancePlayer < basicParameters.attackRange)
+        {
+            OnEnterRange?.Invoke();
+        }
+    }
+
+    public void Flip()
+    {
+        bool shouldFlip = (facingRight && transform.position.x < playerPosition.x) ||
+                      (!facingRight && transform.position.x > playerPosition.x);
+
+        if (shouldFlip)
+        {
+            facingRight = !facingRight;
+            Vector3 scale = transform.localScale;
+            scale.x *= -1;
+            transform.localScale = scale;
+        }
+
+    }
+
+
 }

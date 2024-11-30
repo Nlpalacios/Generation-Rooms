@@ -103,7 +103,7 @@ Animator:
   m_GameObject: {fileID: 3618052842229127554}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 7b80d268cd5831d4faa9d725e7354128, type: 2}
+  m_Controller: {fileID: 9100000, guid: a8a1eeb66e1dd5c4a84b1fe9f3c96563, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -222,9 +222,72 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 642b9679932a08e4c92553ad25a2cfba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enemyParameters: {fileID: 11400000, guid: 6a9d1a92b14835948bcee64945b03569, type: 2}
+  basicParameters: {fileID: 11400000, guid: 6a9d1a92b14835948bcee64945b03569, type: 2}
   isCanMove: 1
   currentHealt: {fileID: 0}
+  useFlip: 1
+  haveAttackState: 1
+  playerPosition: {x: 0, y: 0, z: 0}
+  canAttack: 1
+  config:
+    distanceAttack: 3
+    moveThreshold: 0.1
+    overshootDistance: 3
+    stoppingDistance: 1.5
+    timeToBack: 3
+    timeToAttack: 3
+    timeAwaitAttack: 0.5
+    wallMask:
+      serializedVersion: 2
+      m_Bits: 768
+    backMovementCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: -0.099998474
+        value: 0.5070801
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    attackMovementCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
 --- !u!114 &987074396013490410
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -234,9 +297,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 3618052842229127554}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a021bc685d22b514b858b1315918d16d, type: 3}
+  m_Script: {fileID: 11500000, guid: 507ae203d9747654e97c9ba6556ecaf0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  timeReceiveAttack: 0
-  forceMagnitude: 0
+  timeReceiveAttack: 0.3
+  forceMagnitude: 2
+  actual_hearts: 0
   max_hearts: 5
