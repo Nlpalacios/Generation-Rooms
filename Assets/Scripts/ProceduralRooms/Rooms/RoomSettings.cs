@@ -1,5 +1,3 @@
-using System;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public abstract class RoomSettings : MonoBehaviour
@@ -17,9 +15,13 @@ public abstract class RoomSettings : MonoBehaviour
 
     public Vector2 GetArea { get => sizeBox; }
 
+    private void Start()
+    {
+        InvokeRepeating("PlayerDetection", 1f, 0.2f);
+    }
+
     private void Update()
     {
-        PlayerDetection();
         NewUpdate();
     }
 
