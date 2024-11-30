@@ -1,18 +1,17 @@
 using System.Collections;
-using Unity.VisualScripting;
 using UnityEngine;
 
-public class HealthControl : MonoBehaviour
+public class HealthControl : MonoBehaviour, IHealthCharacterControl
 {
     [Header("Animation")]
     [SerializeField] private float timeReceiveAttack;
     [SerializeField] private float forceMagnitude;
 
     [Header("Health")]
+    [SerializeField] private int actual_hearts = 0;
     [SerializeField, Range(0, 10)] private int max_hearts = 5;
 
-    //Private variables
-    private int actual_hearts = 0;
+    //Private variables  
     private Rigidbody2D rb2D;
 
     //Event delegate
@@ -23,32 +22,31 @@ public class HealthControl : MonoBehaviour
     public event HealthChangedDelegate OnHealthChanged;
 
     public int GetCurrentHealth { get { return actual_hearts; } }
-
-    public int SetMaxHeart { get => max_hearts; set => max_hearts = value; }
+    public int GetMaxHearts {  get { return max_hearts; } }
+    public int SetMaxHeart { set => max_hearts = value; }
 
     private void Start()
     {
-        actual_hearts = SetMaxHeart;
+        actual_hearts = GetMaxHearts;
         rb2D = GetComponent<Rigidbody2D>();
     }
 
-    public void AddHearts(int hearts)
+    public void AddHeart(int hearts)
     {
-        actual_hearts = Mathf.Clamp(actual_hearts + hearts, 0, SetMaxHeart);
+        actual_hearts = Mathf.Clamp(actual_hearts + hearts, 0, GetMaxHearts);
     }
 
     public void RemoveHearts(int damage)
     {
         actual_hearts = Mathf.Max(actual_hearts - damage, 0);
-        StartCoroutine(takeDamageAnimation());
+        TakeDamage();
 
         OnHealthChanged?.Invoke(damage);
+    }
 
-        // Disparar evento
-        if (actual_hearts <= 0)
-        {
-            OnDeathCharacter?.Invoke();
-        }
+    public void TakeDamage()
+    {
+        StartCoroutine(takeDamageAnimation());
     }
 
     IEnumerator takeDamageAnimation()
@@ -76,6 +74,12 @@ public class HealthControl : MonoBehaviour
             elapsedTime += blinkInterval;
         }
 
-        spriteRenderer.color = initColor; 
+        spriteRenderer.color = initColor;
+
+        // Trigger Event
+        if (actual_hearts <= 0)
+        {
+            OnDeathCharacter?.Invoke();
+        }
     }
 }
