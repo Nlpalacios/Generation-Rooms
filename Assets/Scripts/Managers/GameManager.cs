@@ -1,10 +1,7 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -128,7 +125,6 @@ public class GameManager : MonoBehaviour
             currentRoom = room;
         }
     }
-
 
     //EVENTS OF CAMERA -----------------------------
     public void EventCameraMoving(bool moving = true)

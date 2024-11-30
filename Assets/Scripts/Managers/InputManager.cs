@@ -13,22 +13,8 @@ public class InputManager : MonoBehaviour
 
     private Dictionary<InputActionsEnum, InputAction> dicInputActions = new Dictionary<InputActionsEnum, InputAction>();
 
-    //SINGLETON
-    public static InputManager Instance { get; private set; }
-
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else if (Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
         InitInputs();
     }
 
@@ -64,7 +50,6 @@ public class InputManager : MonoBehaviour
             return null;
         }
     }
-
 }
 
 public enum InputActionsEnum
