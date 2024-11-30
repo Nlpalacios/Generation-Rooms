@@ -14,16 +14,16 @@ public class CombatSystem : MonoBehaviour
     [SerializeField] private PlayerWeapon actualWeapon;
 
     [Header("Attack")]
-    [SerializeField] bool isAttack = false; 
+    [SerializeField] private bool isAttack = false; 
     
     [Header("Detection")]
     [SerializeField] private LayerMask layerEnemies;
 
     [Header("Rectangle Player Zone")]
-    [SerializeField] float distanceX_Left;
-    [SerializeField] float distanceX_Right;
-    [SerializeField] float distanceY_Top;
-    [SerializeField] float distanceY_Down;
+    [SerializeField] private float distanceX_Left;
+    [SerializeField] private float distanceX_Right;
+    [SerializeField] private float distanceY_Top;
+    [SerializeField] private float distanceY_Down;
 
     [Header("Weapons")]
     [SerializeField] private List<SO_WeaponManager> weaponsComponents = new List<SO_WeaponManager>();
@@ -39,9 +39,16 @@ public class CombatSystem : MonoBehaviour
     //Attack
     private float delay = 0f;
 
+    private Player playerReference;
+
     public PlayerWeapon ActualWeapon { get => actualWeapon; set => actualWeapon = value; }
 
     #region Start
+
+    private void Start()
+    {
+        playerReference = GetComponent<Player>();
+    }
 
     private void OnEnable()
     {
@@ -68,7 +75,7 @@ public class CombatSystem : MonoBehaviour
         }
 
         delay = Time.time + GetWeapon().delay;
-        //directionAttack = playerReference.GetDirection;
+        directionAttack = playerReference.GetDirection;
 
         AnimationClip clip = GetAnimationFromDirection(ActualWeapon);
         if (!clip) { 
@@ -115,6 +122,7 @@ public class CombatSystem : MonoBehaviour
     AnimationClip GetAnimationFromDirection(PlayerWeapon typeWeapon)
     {
         SO_WeaponManager Attributes = GetWeapon();
+
         if (directionAttack.x != 0)
         {
             return directionAttack.x > 0 ? Attributes.attack_Right : Attributes.attack_Left;
@@ -134,11 +142,10 @@ public class CombatSystem : MonoBehaviour
         return weaponsComponents.Find(n => n.type == actualWeapon);
     }
 
-
-
     #endregion
 
     #region Detector
+
     private void UpdateRectangle()
     {
         float distance = GetWeapon().maxScope * (directionAttack.x >= 1 ? 1 : -1);

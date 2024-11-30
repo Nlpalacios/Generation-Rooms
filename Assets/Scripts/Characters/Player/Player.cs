@@ -1,5 +1,3 @@
-using Unity.VisualScripting;
-using UnityEditor.ShaderGraph;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -8,6 +6,7 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(HealthControl))]
 [RequireComponent(typeof(AnimationControl))]
 [RequireComponent(typeof(CombatSystem))]
+[RequireComponent(typeof(InputManager))]
 public class Player : MonoBehaviour
 {
     [Header("Player Attributes")]
@@ -21,9 +20,12 @@ public class Player : MonoBehaviour
     private InputAction IA_PlayerAttack;
 
     //Move player
-    private Vector2 vectorPlayerMove;
+    [Header("Debug")]
+    [SerializeField] private bool isCanMove = true;
+    [SerializeField] private Vector2 vectorPlayerMove;
 
     //CUSTOM COMPONENTS
+    private InputManager inputManager;
     private HealthControl healthControl;
     private AnimationControl animator;
     private CombatSystem combatSystem;
@@ -37,31 +39,23 @@ public class Player : MonoBehaviour
     private void OnEnable()
     {
         //Initialize components
+        InitializeComponents();
+    }
+
+    private void InitializeComponents()
+    {
         rbPlayer = GetComponent<Rigidbody2D>();
         animator = GetComponent<AnimationControl>();
         combatSystem = GetComponent<CombatSystem>();
         healthControl = GetComponent<HealthControl>();
+        inputManager = GetComponent<InputManager>();
 
-        healthControl.OnDeathCharacter += Death;
-
-        if (InputManager.Instance )
-        {
-            IA_playerMove = InputManager.Instance.GetInputAction(InputActionsEnum.Movement);
-            IA_PlayerAttack = InputManager.Instance.GetInputAction(InputActionsEnum.Attack);
-            if (IA_PlayerAttack == null || IA_playerMove == null) return;
-
-            // Subscribe to the performed and canceled events
-            IA_playerMove.Enable();
-            IA_playerMove.performed += CharacterMove;
-            IA_playerMove.canceled += CharacterMove;
-
-            IA_PlayerAttack.Enable();
-            IA_PlayerAttack.started += PlayerAttack;
-        }
+        SubscribeEvents();
     }
 
     private void OnDisable()
     {
+        UnsubscribeEvents();
         if (IA_playerMove == null || IA_PlayerAttack == null) return;
         
         IA_playerMove.performed -= CharacterMove;
@@ -74,16 +68,50 @@ public class Player : MonoBehaviour
 
     #endregion
 
+    #region Events
+
+    private void SubscribeEvents()
+    {
+        EventManager.Instance.Subscribe(PlayerEvents.OnStopMovement, StopMovement);
+        EventManager.Instance.Subscribe(PlayerEvents.OnReceiveDamage, ReceiveDamage);
+    }
+
+    private void UnsubscribeEvents()
+    {
+        EventManager.Instance.Unsubscribe(PlayerEvents.OnStopMovement, StopMovement);
+        EventManager.Instance.Unsubscribe(PlayerEvents.OnReceiveDamage, ReceiveDamage);
+    }
+
+    #endregion
+
     void Start()
     {
-        if (!InputManager.Instance || !GameManager.Instance)
+        if (!GameManager.Instance)
         {
             Debug.LogWarning($"NO MANAGERS IN -{transform.name}-");
         }
+
+        healthControl.OnDeathCharacter += Death;
+        if (!inputManager) return;
+
+        IA_playerMove = inputManager.GetInputAction(InputActionsEnum.Movement);
+        IA_PlayerAttack = inputManager.GetInputAction(InputActionsEnum.Attack);
+        if (IA_PlayerAttack == null || IA_playerMove == null) return;
+
+        // Subscribe to the performed and canceled events
+        IA_playerMove.Enable();
+        IA_playerMove.performed += CharacterMove;
+        IA_playerMove.canceled += CharacterMove;
+
+        IA_PlayerAttack.Enable();
+        IA_PlayerAttack.started += PlayerAttack;
+        isCanMove = true;
     }
 
     private void FixedUpdate()
     {
+        if (!isCanMove) return;
+
         //Moving player
         Vector2 movePlayer = vectorPlayerMove * playerSpeed * Time.deltaTime;
         rbPlayer.velocity = movePlayer;
@@ -96,6 +124,12 @@ public class Player : MonoBehaviour
     void CharacterMove(InputAction.CallbackContext context)
     {
         vectorPlayerMove = context.ReadValue<Vector2>().normalized;
+    }
+
+    void StopMovement(object newMovement)
+    {
+        bool stopMovement = (bool)newMovement;
+        isCanMove = !stopMovement;
     }
 
     #endregion
@@ -133,10 +167,20 @@ public class Player : MonoBehaviour
 
     #endregion
 
+    #region Damage
+
+    public void ReceiveDamage(object damage)
+    {
+        healthControl.RemoveHearts((int)damage);
+        EventManager.Instance.TriggerEvent(PlayerEvents.OnChangeHealth);
+    }
 
     //Death -------------------------------------------
     void Death()
     {
         Debug.LogWarning("PLAYER DEATH");
     }
+
+    #endregion
+
 }
