@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: SO_Sword
   m_EditorClassIdentifier: 
   type: 1
+  typeWeapon: 1
   damage: 1
   delay: 0.2
   maxScope: 0.8

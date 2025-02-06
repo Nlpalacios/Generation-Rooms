@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: SO_Hammer
   m_EditorClassIdentifier: 
   type: 2
+  typeWeapon: 1
   damage: 3
   delay: 0.8
   maxScope: 1

@@ -16,6 +16,9 @@ public class SO_EnemyParameters : ScriptableObject
     [Header("Movement")]
     public float speed;
     public float attackRange;
+
+    [Header("Experience")]
+    public float totalExperience;
 }
 
 public enum typeEnemy: short

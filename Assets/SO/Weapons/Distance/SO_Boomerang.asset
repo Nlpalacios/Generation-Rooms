@@ -10,13 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8387757460c2a1644a54014c5424d698, type: 3}
-  m_Name: SO_Axe
+  m_Name: SO_Boomerang
   m_EditorClassIdentifier: 
-  type: 3
+  type: 5
+  typeWeapon: 2
   damage: 2
-  delay: 0.5
-  maxScope: 1.2
-  attack_Left: {fileID: 7400000, guid: 227b6811881c24649938bd55af9fc69c, type: 2}
-  attack_Right: {fileID: 7400000, guid: 79e2ce5f08404cc40840a0eaf6dc8fa1, type: 2}
-  attack_Up: {fileID: 7400000, guid: 5fd9b767064c1fb46887bf578caf423e, type: 2}
-  attack_Down: {fileID: 7400000, guid: 0ecc7e07d3c9238429df088a60e278d4, type: 2}
+  delay: 3
+  maxScope: 7
+  attack_Left: {fileID: 0}
+  attack_Right: {fileID: 0}
+  attack_Up: {fileID: 0}
+  attack_Down: {fileID: 0}

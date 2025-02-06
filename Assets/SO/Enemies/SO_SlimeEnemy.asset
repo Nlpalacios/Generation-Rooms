@@ -18,3 +18,4 @@ MonoBehaviour:
   maxHearts: 6
   speed: 1.5
   attackRange: 0
+  totalExperience: 5

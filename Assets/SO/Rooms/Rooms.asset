@@ -14,12 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   roomsPrefab:
   - typeRoom: 0
-    roomPrefab: {fileID: 5158192040073548485, guid: 178cbee1fa4c5a84e9dbb960174341b2, type: 3}
+    roomPrefab: {fileID: 5158192040073548485, guid: 289c1def7bf1606479b7617d07e732c6, type: 3}
   - typeRoom: 1
-    roomPrefab: {fileID: 5158192040073548485, guid: eed86560039846f45b0974bdf4b3a08a, type: 3}
+    roomPrefab: {fileID: 5158192040073548485, guid: 00c24840b7fb1914c8c9a25669f73565, type: 3}
   - typeRoom: 2
-    roomPrefab: {fileID: 5158192040073548485, guid: 2111f2a088a17a649a9d23ce2b20440e, type: 3}
+    roomPrefab: {fileID: 5158192040073548485, guid: c1c012924cc475045acf46485590e195, type: 3}
   - typeRoom: 3
-    roomPrefab: {fileID: 5158192040073548485, guid: 1ecdf4d3e8491f04eacc1382b2f65e69, type: 3}
+    roomPrefab: {fileID: 5158192040073548485, guid: 3124d28698b0170478b48d9f9d84aea0, type: 3}
   - typeRoom: 4
-    roomPrefab: {fileID: 5158192040073548485, guid: 16d589a8c20fc324ead471031010953e, type: 3}
+    roomPrefab: {fileID: 5158192040073548485, guid: ec63696e04bce5144a44fe954ff97653, type: 3}

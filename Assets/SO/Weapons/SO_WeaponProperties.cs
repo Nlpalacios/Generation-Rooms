@@ -1,11 +1,14 @@
-using System;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "SO_WeaponManager", menuName = "Scriptable Objects/SO_WeaponManager")]
-public class SO_WeaponManager : ScriptableObject
+public class SO_WeaponProperties : ScriptableObject
 {
     [Header("Type")]
     public PlayerWeapon type;
+    public TypeCombat typeWeapon;
+
+    [Header("Icon")]
+    public Sprite icon;
 
     [Header("Value")]
     public int damage;
