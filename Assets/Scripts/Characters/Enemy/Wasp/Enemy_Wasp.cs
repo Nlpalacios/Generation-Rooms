@@ -4,7 +4,7 @@ public class Enemy_Wasp : EnemyBasicStates
 {
     [Header("- Custom Properties -")]
     [SerializeField] private WaspAttackConfig config;
-    private AttackPhase currentPhase;
+    [SerializeField] private AttackPhase currentPhase;
 
     //Final positions
     private Vector2 targetPosition = Vector2.zero;
@@ -39,7 +39,6 @@ public class Enemy_Wasp : EnemyBasicStates
         Attacking
     }
 
-
     private void Start()
     {
         base.useFlip = true;
@@ -55,12 +54,12 @@ public class Enemy_Wasp : EnemyBasicStates
 
     public override void StartAttack()
     {
-        currentPhase = AttackPhase.MovingBack;
-        movementProgress = 0f;
-        targetPosition = CalculateBackPosition();
-
         base.DesactivateNavMesh();
         base.enemyAnim.SetBool("Attack", true);
+
+        movementProgress = 0f;
+        targetPosition = CalculateBackPosition();
+        currentPhase = AttackPhase.MovingBack;
     }
 
     private Vector2 CalculateBackPosition()
@@ -160,7 +159,7 @@ public class Enemy_Wasp : EnemyBasicStates
 
     private void CompletedAttack()
     {
-        canAttack = false;
+        base.canAttack = false;
         movementProgress = 0f;
 
         ActivateNavMesh();
@@ -183,6 +182,7 @@ public class Enemy_Wasp : EnemyBasicStates
         }
     }
 
-    public override void Chase() { }
-    public override void OnHealthChanged(int damage) { }
+    public override void Chase() {}
+    public override void OnHealthChanged(int damage) {}
+    public override void ResetEnemy(){}
 }

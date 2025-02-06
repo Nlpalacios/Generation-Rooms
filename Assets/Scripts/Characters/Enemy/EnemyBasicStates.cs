@@ -14,6 +14,7 @@ public abstract class EnemyBasicStates : MonoBehaviour
     //Components
     [HideInInspector] public bool isCanMove = true;
     [HideInInspector] public HealthControl currentHealt;
+    [HideInInspector] public SpriteRenderer spriteRenderer;
 
     //Private variables - States
     private IEnemyState ChaseState = new ChaseState();
@@ -46,33 +47,56 @@ public abstract class EnemyBasicStates : MonoBehaviour
     //Events 
     public Action FinalizeDaley;
 
+
     #region Start Enemy
-    private void InitVariables()
+
+    private void InitializeComponents()
     {
         gameManager = GameManager.Instance;
         NMA_agent = GetComponent<NavMeshAgent>();
         enemyAnim = GetComponent<Animator>();
         currentHealt = GetComponent<HealthControl>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
 
-        if (currentHealt == null) return;
-        if (NMA_agent == null || enemyAnim == null)
+        if (currentHealt == null || NMA_agent == null || enemyAnim == null)
         {
-            Debug.LogWarning("NO ANIMATOR OR AGENT");
-            return;
+            Debug.LogError("NO FIND BASIC COMPONENTS IN: " + this.gameObject.name);
+        }
+    }
+
+    private void InitVariables()
+    {
+        if (currentHealt == null || NMA_agent == null || enemyAnim == null)
+        {
+            InitializeComponents();
         }
 
-        ResetNavMeshValues();
+        spriteRenderer.color = Color.white;
+
+        enemyAnim.enabled = true;
+        coroutineDelayActive = false;
 
         currentHealt.SetMaxHeart = basicParameters.maxHearts;
         currentHealt.OnDeathCharacter += OnDeath;
         currentHealt.OnHealthChanged += OnHealthChanged;
+        currentHealt.ResetVariables();
+
+        ResetNavMeshValues();
     }
 
     public void InitEnemy()
     {
+        ResetEnemy();
         InitVariables();
 
         SwitchToState(EnemyStates.Chase);
+    }
+
+    private void OnDisable()
+    {
+        if (currentHealt == null) return;
+        currentHealt.OnDeathCharacter -= OnDeath;
+        currentHealt.OnHealthChanged -= OnHealthChanged;
     }
 
     #endregion
@@ -81,7 +105,9 @@ public abstract class EnemyBasicStates : MonoBehaviour
     public void OnDeath()
     {
         //Add animation death
-        this.gameObject.SetActive(false);
+        this.gameObject.SetActive(false); 
+        EnemyManager.Instance.UpdateEnemyState(this.gameObject, false);
+        EventManager.Instance.TriggerEvent(PlayerEvents.OnChangeExperience, basicParameters.totalExperience);
     }
 
     public abstract void OnHealthChanged(int damage);
@@ -101,8 +127,10 @@ public abstract class EnemyBasicStates : MonoBehaviour
         if (useFlip)
             Flip();
 
-        if (canAttack || coroutineDelayActive) return;
-        StartCoroutine(CoroutineDelayAttack());
+        if (!canAttack && !coroutineDelayActive)
+        {
+            StartCoroutine(CoroutineDelayAttack());
+        }
     }
 
     #region Attack
@@ -149,13 +177,26 @@ public abstract class EnemyBasicStates : MonoBehaviour
     public abstract void StartAttack();
     public abstract void Chase();
     public abstract void Attack();
-
+    public abstract void ResetEnemy();
     #endregion
 
     #region NavMesh
 
+    public void FrezeeEnemy(float seconds)
+    {
+        StartCoroutine(TimeFreeze(seconds));
+    }
+
+    IEnumerator TimeFreeze(float seconds)
+    {
+        //isCanMove = false;
+        yield return new WaitForSeconds(seconds);
+        //isCanMove = true;
+    }
+
     public void ResetNavMeshValues()
     {
+        NMA_agent.enabled = true;
         NMA_agent.updateRotation = false;
         NMA_agent.updateUpAxis = false;
 
@@ -212,6 +253,4 @@ public abstract class EnemyBasicStates : MonoBehaviour
         }
 
     }
-
-
 }

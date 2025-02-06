@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,25 +11,22 @@ public class EnemyManager : MonoBehaviour
 
     [Header("Enemy - Path prefabs")]
     [SerializeField] private string pathEnemies = "";
-
-    private List<GameObject> enemiesProperties = new List<GameObject>();
+    [SerializeField] private List<GameObject> enemiesProperties = new List<GameObject>();
     private Dictionary<typeEnemy, GameObject> keyEnemyType = new Dictionary<typeEnemy, GameObject>();
     private Dictionary<typeEnemy, List<GameObject>> enemyPools = new Dictionary<typeEnemy, List<GameObject>>();
 
+    private HashSet<GameObject> activeEnemies = new HashSet<GameObject>();
+    private HashSet<GameObject> enemiesSelected = new HashSet<GameObject>();
+
     //Singleton
     public static EnemyManager Instance { get; private set; }
-
-    private void OnEnable()
-    {
-        EventManager.Instance.Subscribe(GameWorldEvents.OnChangeRoom, DisableAllEnemies);
-    }
 
     void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            //DontDestroyOnLoad(gameObject);
         }
         else if (Instance != this)
         {
@@ -39,16 +37,23 @@ public class EnemyManager : MonoBehaviour
 
     void Start()
     {
-        LoadEnemiesPrefab();
+        //LoadEnemiesPrefab();
         InitObjectPool();
+    }
 
+    private void Update()
+    {
         //Delete
-        InstantiateEnemy(new Vector3(0, 0, 0), typeEnemy.Slime);
-        InstantiateEnemy(new Vector3(0, 0, 0), typeEnemy.Wasp);
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            InstantiateEnemy(new Vector3(0, 0, 0), typeEnemy.Slime);
+            InstantiateEnemy(new Vector3(0, 0, 0), typeEnemy.Wasp);
+        }
     }
 
     #region Object pool
 
+    [ContextMenu("Load enemies")]
     public void LoadEnemiesPrefab()
     {
         string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { pathEnemies });
@@ -81,9 +86,9 @@ public class EnemyManager : MonoBehaviour
             for (int i = 0; i < countEnemies; i++)
             {
                 GameObject currentEnemy = Instantiate(enemyObject, objectPool.transform);
-                currentEnemy.name = $"{enemyObject.name}: {i}";
-                currentEnemy.SetActive(false);
+                currentEnemy.name = $"{i}_{enemyObject.name}";
                 enemyPools[enemyStates.parameters.enemyType].Add(currentEnemy);
+                currentEnemy.SetActive(false);
             }
         }
     }
@@ -108,8 +113,11 @@ public class EnemyManager : MonoBehaviour
                 enemy.SetActive(true);
 
                 Vector3 posInit = new Vector3(posStartEnemy.x, posStartEnemy.y, 0);
-                enemy.transform.position = posInit;
+                enemy.transform.localPosition = posInit;
                 enemy.transform.rotation = new Quaternion(0, 0, 0, 0);
+
+                EventManager.Instance.TriggerEvent(EnemiesEvents.OnEnableEnemy);
+                UpdateEnemyState(enemy, true);
                 return enemy;
             }
         }
@@ -119,16 +127,49 @@ public class EnemyManager : MonoBehaviour
 
     #endregion
 
-    private void DisableAllEnemies(object call)
+    public void UpdateEnemyState(GameObject enemy, bool isActive)
     {
-        foreach (var type in enemyPools.Keys)
+        if (isActive)
         {
-            enemyPools[type].ForEach(enemy => { enemy.SetActive(false); });
+            activeEnemies.Add(enemy);
+        }
+        else
+        {
+            activeEnemies.Remove(enemy);
+            enemiesSelected.Remove(enemy);
         }
     }
 
-
-    private void Update()
+    public int GetCountActiveEnemies()
     {
+        return activeEnemies.Count;
     }
+    public GameObject GetFirstActiveEnemy()
+    {
+        foreach (var enemy in activeEnemies)
+        {
+            return enemy;
+        }
+
+        return null;
+    }
+    public GameObject GetDiferentActiveEnemy()
+    {
+        foreach (var enemy in activeEnemies)
+        {
+            if (!enemiesSelected.Contains(enemy))
+            {
+                enemiesSelected.Add(enemy);
+                return enemy;
+            }
+        }
+
+        return null;
+    }
+
+    public void ResetEnemiesSelected()
+    {
+        enemiesSelected.Clear();
+    }
+
 }
