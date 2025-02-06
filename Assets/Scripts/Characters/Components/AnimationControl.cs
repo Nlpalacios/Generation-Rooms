@@ -7,20 +7,27 @@ public class AnimationControl : MonoBehaviour
     [Header("Attributes names in animator")]
     [SerializeField] string animatorMoveX;
     [SerializeField] string animatorMoveY;
+    [SerializeField] string unlockItem;
 
     [Header("Idle Animations")]
+    [SerializeField] string resetAnimator;
     [SerializeField] string animatorIdle;
     [SerializeField] string animatorIdleX;
     [SerializeField] string animatorIdleY;
 
-    private Animator animator;
-    private Rigidbody2D rbCharacter;
+    [Header("Components")]
+    [SerializeField] private Animator animator;
+    [SerializeField] private Rigidbody2D rbCharacter;
     private Vector2 lastMoveDirection = Vector2.down;
 
-    private void Start()
+    private void OnEnable()
     {
-        animator = GetComponent<Animator>();
-        rbCharacter = GetComponent<Rigidbody2D>();
+        EventManager.Instance.Subscribe(PlayerEvents.OnUnlockItem, UnlockItemAnimation);
+    }
+
+    private void OnDisable()
+    {
+        EventManager.Instance.Unsubscribe(PlayerEvents.OnUnlockItem, UnlockItemAnimation);
     }
 
     private void FixedUpdate()
@@ -63,4 +70,18 @@ public class AnimationControl : MonoBehaviour
             animator.SetFloat(animatorIdleY, lastMoveDirection.y);
         }
     }
+
+    public void EnableAnimator(bool enable)
+    {
+        animator.SetBool(resetAnimator, enable);
+    }
+
+    #region New ability
+    private void UnlockItemAnimation(object call)
+    {
+        EnableAnimator(false);
+        animator.SetTrigger(unlockItem);
+    }
+
+    #endregion
 }

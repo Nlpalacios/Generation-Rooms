@@ -17,7 +17,6 @@ public class Player_Camera : MonoBehaviour
     //Private variables
     private GameManager manager;
 
-
     private void Start()
     {
         manager = GameManager.Instance;
@@ -26,22 +25,27 @@ public class Player_Camera : MonoBehaviour
     private void OnEnable()
     {
         EventManager.Instance.Subscribe(GameWorldEvents.OnCameraShake, CameraShake);
+        EventManager.Instance.Subscribe(GameWorldEvents.OnChangeRoom, ChangePositionCamera);
     }
 
     private void OnDisable()
     {
         EventManager.Instance.Unsubscribe(GameWorldEvents.OnCameraShake, CameraShake);
+        EventManager.Instance.Unsubscribe(GameWorldEvents.OnChangeRoom, ChangePositionCamera);
     }
 
-    public void ChangePositionCamera(GameObject room)
+    public void ChangePositionCamera(object call)
     {
-        if (manager.GetCurrentRoom == room ) return;
-
+        GameObject newRoom = (GameObject)call;
         StopAllCoroutines();
 
         //Save actual room
-        manager.SaveActualRoom(room);
-        StartCoroutine(MoveCamera(room.transform.position));
+        if (newRoom.TryGetComponent(out RoomSettings room))
+        {
+            StartCoroutine(MoveCamera(room.gameObject.transform.position));
+        }
+        else
+            Debug.LogWarning("The room no contains class");
     }
 
     private IEnumerator MoveCamera(Vector3 targetPosition)
@@ -49,9 +53,6 @@ public class Player_Camera : MonoBehaviour
         Vector3 startPosition = transform.position;
         Vector3 endPosition = new Vector3(targetPosition.x, targetPosition.y, -10);
         float elapsed = 0f;
-
-        //Event move camera
-        manager.EventCameraMoving();
 
         while (elapsed < timeAnimation)
         {
@@ -61,11 +62,7 @@ public class Player_Camera : MonoBehaviour
         }
 
         transform.position = endPosition;
-
-        //Event stop camera
-        manager.EventCameraMoving(false);
     }
-
 
     #region Camera Shake
 
@@ -73,8 +70,9 @@ public class Player_Camera : MonoBehaviour
     {
         if (isCameraShake) return;
 
-        Debug.Log("CAMARA SHAKE");
+        Debug.LogWarning("CAMARA SHAKE");
         cameraInitialPosition = transform.position;
+
         InvokeRepeating("CameraShaking", 0f, .005f);
         Invoke("StopCameraShaking", shakeTime);
     }
@@ -97,5 +95,4 @@ public class Player_Camera : MonoBehaviour
     }
 
     #endregion
-
 }

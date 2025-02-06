@@ -1,10 +1,7 @@
-using NUnit.Framework;
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.InputSystem;
-using UnityEngine.UI;
-using Unity.VisualScripting;
 
 [RequireComponent(typeof(Player))]
 [RequireComponent(typeof(BoxCollider2D))]
@@ -13,9 +10,6 @@ public class CombatSystem : MonoBehaviour
     [Header("Current Weapon")]
     [SerializeField] private PlayerWeapon actualWeapon;
 
-    [Header("Attack")]
-    [SerializeField] private bool isAttack = false; 
-    
     [Header("Detection")]
     [SerializeField] private LayerMask layerEnemies;
 
@@ -26,12 +20,23 @@ public class CombatSystem : MonoBehaviour
     [SerializeField] private float distanceY_Down;
 
     [Header("Weapons")]
-    [SerializeField] private List<SO_WeaponManager> weaponsComponents = new List<SO_WeaponManager>();
+    [SerializeField] private List<SO_WeaponProperties> weaponsComponents = new List<SO_WeaponProperties>();
+    [SerializeField] private List<WeaponDistanceID> prefabDistanceWeapons = new List<WeaponDistanceID>();
+     
+    [Header("Pooling")]
+    [SerializeField] private Transform parentObjects;
+    [SerializeField] private int totalPool;
+    //Add for more objects in pooling
+
+    private Dictionary<TypeBullet, List<GameObject>> dicBullets = new Dictionary<TypeBullet, List<GameObject>>();
 
     //RECTANGLE
     private Vector2 TopRightcorner;
     private Vector2 BottomLefttcorner;
     private Vector2 directionAttack = Vector2.down;
+
+    //[Header("Attack")]
+    private bool isAttack = false;
 
     //Animations
     private Animator animator;
@@ -47,12 +52,12 @@ public class CombatSystem : MonoBehaviour
 
     private void Start()
     {
-        playerReference = GetComponent<Player>();
-    }
+        InitPooling();
 
-    private void OnEnable()
-    {
-        animator = GetComponent<Animator>(); 
+        playerReference = GetComponent<Player>();
+        animator = GetComponent<Animator>();
+
+        EventManager.Instance.Subscribe(CombatEvents.OnChangeWeapon, SetWeapon);
     }
 
     private void OnDisable()
@@ -63,6 +68,40 @@ public class CombatSystem : MonoBehaviour
 
     #endregion
 
+    #region Pooling
+    private void InitPooling()
+    {
+        foreach (WeaponDistanceID weapon in prefabDistanceWeapons)
+        {
+            if (weapon == null || weapon.type == TypeBullet.None) continue;
+            dicBullets[weapon.type] = new List<GameObject>();
+
+            for (int i = 0; i < totalPool; i++)
+            {
+                GameObject newWeapon = Instantiate(weapon.gameObject, parentObjects);
+                dicBullets[weapon.type].Add(newWeapon); 
+                newWeapon.SetActive(false);
+            }
+        }
+    }
+
+    private GameObject GetBullet(TypeBullet type)
+    {
+        if (!dicBullets.ContainsKey(type) || dicBullets[type] == null) return null;
+
+        foreach(GameObject newBullet in dicBullets[type])
+        {
+            if (newBullet.activeInHierarchy) continue;
+
+            newBullet.SetActive(true);
+            return newBullet;
+        }
+
+        return null;
+    }
+
+    #endregion
+
     #region Attack
 
     public void CharacterAttack(InputAction.CallbackContext context)
@@ -70,16 +109,22 @@ public class CombatSystem : MonoBehaviour
         if (this == null) return;
 
         //Delay
-        if (delay > Time.time) { 
-            return;
-        }
-
+        if (delay > Time.time) return;
+        
         delay = Time.time + GetWeapon().delay;
         directionAttack = playerReference.GetDirection;
 
-        AnimationClip clip = GetAnimationFromDirection(ActualWeapon);
-        if (!clip) { 
-            Debug.Log($"ANIMATION NULL IN {transform.name}"); 
+        AnimationClip clip = null;
+
+        if (GetWeapon().typeWeapon == TypeCombat.Melee)
+             clip = GetAnimationClipFromDirection(ActualWeapon);
+
+        else if (GetWeapon().typeWeapon == TypeCombat.Ranged)
+            clip = GetAnimationClipFromDirection(PlayerWeapon.AnimationDistance);
+
+        if (!clip)
+        { 
+            Debug.Log($"ANIMATION NULL: {ActualWeapon}"); 
             return;
         }
 
@@ -97,10 +142,21 @@ public class CombatSystem : MonoBehaviour
         {
             if (!collider || !isAttack) continue;
 
-            HealthControl healthEnemy = collider.GetComponent<HealthControl>();
-            if (healthEnemy == null) return;
+            if (collider.gameObject.TryGetComponent(out IHealthCharacterControl enemyHealth))
+            {
+                enemyHealth.RemoveHearts(GetWeapon().damage);
+            }
+        }
+    }
 
-            healthEnemy.RemoveHearts(GetWeapon().damage);
+    public void DistanceAttack()
+    {
+        GameObject boomerang = GetBullet(TypeBullet.Boomerang);
+        if (boomerang == null) return;
+
+        if (boomerang.TryGetComponent(out Player_Boomerang player_Boomerang))
+        {
+            player_Boomerang.InitBoomerang();
         }
     }
 
@@ -119,27 +175,26 @@ public class CombatSystem : MonoBehaviour
         isAttack = false;
     }
 
-    AnimationClip GetAnimationFromDirection(PlayerWeapon typeWeapon)
+    AnimationClip GetAnimationClipFromDirection(PlayerWeapon typeWeapon)
     {
-        SO_WeaponManager Attributes = GetWeapon();
+        SO_WeaponProperties Attributes = GetWeapon(typeWeapon);
 
         if (directionAttack.x != 0)
-        {
             return directionAttack.x > 0 ? Attributes.attack_Right : Attributes.attack_Left;
-        }
+        
         else
-        {
             return directionAttack.y > 0 ? Attributes.attack_Up : Attributes.attack_Down;
-        }
+        
     }
 
     #endregion
 
     #region Getters
 
-    SO_WeaponManager GetWeapon()
+    SO_WeaponProperties GetWeapon(PlayerWeapon typeWeapon = PlayerWeapon.None)
     {
-        return weaponsComponents.Find(n => n.type == actualWeapon);
+        PlayerWeapon weapon = typeWeapon == PlayerWeapon.None ? actualWeapon : typeWeapon;
+        return weaponsComponents.Find(n => n.type == weapon);
     }
 
     #endregion
@@ -223,4 +278,9 @@ public class CombatSystem : MonoBehaviour
     }
 
     #endregion
+
+    private void SetWeapon(object call)
+    {
+        actualWeapon = (PlayerWeapon)call;
+    }
 }

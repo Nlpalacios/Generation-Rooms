@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
@@ -11,15 +12,12 @@ public class HealthControl : MonoBehaviour, IHealthCharacterControl
     [SerializeField] private int actual_hearts = 0;
     [SerializeField, Range(0, 10)] private int max_hearts = 5;
 
-    //Private variables  
+    //Private variables
     private Rigidbody2D rb2D;
 
     //Event delegate
-    public delegate void HealthControlDelegate();
-    public event HealthControlDelegate OnDeathCharacter;
-
-    public delegate void HealthChangedDelegate(int currentHealth);
-    public event HealthChangedDelegate OnHealthChanged;
+    public Action OnDeathCharacter;
+    public Action<int> OnHealthChanged;
 
     public int GetCurrentHealth { get { return actual_hearts; } }
     public int GetMaxHearts {  get { return max_hearts; } }
@@ -29,6 +27,11 @@ public class HealthControl : MonoBehaviour, IHealthCharacterControl
     {
         actual_hearts = GetMaxHearts;
         rb2D = GetComponent<Rigidbody2D>();
+    }
+
+    public void ResetVariables()
+    {
+        actual_hearts = max_hearts;
     }
 
     public void AddHeart(int hearts)

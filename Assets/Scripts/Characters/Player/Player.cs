@@ -1,16 +1,15 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-[RequireComponent(typeof(BoxCollider2D))]
 [RequireComponent(typeof(Rigidbody2D))]
-[RequireComponent(typeof(HealthControl))]
-[RequireComponent(typeof(AnimationControl))]
+//[RequireComponent(typeof(PlayerStats))]
 [RequireComponent(typeof(CombatSystem))]
 [RequireComponent(typeof(InputManager))]
+[RequireComponent(typeof(BoxCollider2D))]
+[RequireComponent(typeof(AnimationControl))]
 public class Player : MonoBehaviour
 {
-    [Header("Player Attributes")]
-    [SerializeField] [Range(0, 10)] private float playerSpeed = 6;
+    [SerializeField] private PlayerStats playerStats;
 
     //Default PLAYER direction
     private Vector2 actualDirection = Vector2.down;
@@ -20,22 +19,21 @@ public class Player : MonoBehaviour
     private InputAction IA_PlayerAttack;
 
     //Move player
-    [Header("Debug")]
-    [SerializeField] private bool isCanMove = true;
-    [SerializeField] private Vector2 vectorPlayerMove;
+    private bool isCanMove = true;
+    private Vector2 vectorPlayerMove;
 
     //CUSTOM COMPONENTS
     private InputManager inputManager;
-    private HealthControl healthControl;
     private AnimationControl animator;
     private CombatSystem combatSystem;
 
     //UNITY COMPONENTS
     private Rigidbody2D rbPlayer;
-
     public Vector2 GetDirection { get => actualDirection; }
 
+
     #region Enable / Disable
+
     private void OnEnable()
     {
         //Initialize components
@@ -47,7 +45,6 @@ public class Player : MonoBehaviour
         rbPlayer = GetComponent<Rigidbody2D>();
         animator = GetComponent<AnimationControl>();
         combatSystem = GetComponent<CombatSystem>();
-        healthControl = GetComponent<HealthControl>();
         inputManager = GetComponent<InputManager>();
 
         SubscribeEvents();
@@ -57,13 +54,12 @@ public class Player : MonoBehaviour
     {
         UnsubscribeEvents();
         if (IA_playerMove == null || IA_PlayerAttack == null) return;
-        
+           
         IA_playerMove.performed -= CharacterMove;
         IA_playerMove.Disable();
 
         IA_PlayerAttack.started += PlayerAttack;
         IA_PlayerAttack.Disable();
-
     }
 
     #endregion
@@ -73,13 +69,13 @@ public class Player : MonoBehaviour
     private void SubscribeEvents()
     {
         EventManager.Instance.Subscribe(PlayerEvents.OnStopMovement, StopMovement);
-        EventManager.Instance.Subscribe(PlayerEvents.OnReceiveDamage, ReceiveDamage);
+        playerStats.OnPlayerDeath += Death;
     }
 
     private void UnsubscribeEvents()
     {
         EventManager.Instance.Unsubscribe(PlayerEvents.OnStopMovement, StopMovement);
-        EventManager.Instance.Unsubscribe(PlayerEvents.OnReceiveDamage, ReceiveDamage);
+        playerStats.OnPlayerDeath -= Death;
     }
 
     #endregion
@@ -90,8 +86,6 @@ public class Player : MonoBehaviour
         {
             Debug.LogWarning($"NO MANAGERS IN -{transform.name}-");
         }
-
-        healthControl.OnDeathCharacter += Death;
         if (!inputManager) return;
 
         IA_playerMove = inputManager.GetInputAction(InputActionsEnum.Movement);
@@ -110,10 +104,14 @@ public class Player : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (!isCanMove) return;
+        if (!isCanMove)
+        { 
+            rbPlayer.velocity = Vector2.zero;
+            return; 
+        }
 
         //Moving player
-        Vector2 movePlayer = vectorPlayerMove * playerSpeed * Time.deltaTime;
+        Vector2 movePlayer = vectorPlayerMove * playerStats.PlayerSpeed * Time.deltaTime;
         rbPlayer.velocity = movePlayer;
         transform.position += (Vector3)movePlayer;
 
@@ -128,8 +126,11 @@ public class Player : MonoBehaviour
 
     void StopMovement(object newMovement)
     {
-        bool stopMovement = (bool)newMovement;
-        isCanMove = !stopMovement;
+        bool shouldStop = (bool)newMovement;
+        isCanMove = !shouldStop;
+
+        if (isCanMove) 
+            animator.EnableAnimator(true);
     }
 
     #endregion
@@ -138,6 +139,7 @@ public class Player : MonoBehaviour
 
     void PlayerAttack(InputAction.CallbackContext context)
     {
+        if (!isCanMove) return;
         combatSystem.CharacterAttack(context);
     }
 
@@ -168,12 +170,6 @@ public class Player : MonoBehaviour
     #endregion
 
     #region Damage
-
-    public void ReceiveDamage(object damage)
-    {
-        healthControl.RemoveHearts((int)damage);
-        EventManager.Instance.TriggerEvent(PlayerEvents.OnChangeHealth);
-    }
 
     //Death -------------------------------------------
     void Death()

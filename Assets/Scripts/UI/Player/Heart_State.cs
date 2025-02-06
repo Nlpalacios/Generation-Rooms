@@ -3,7 +3,6 @@ using UnityEngine.UI;
 
 public class Heart_State : MonoBehaviour
 {
-    [SerializeField] [Range(0,2)] private int currentState = 2;
     [SerializeField] Image currentImage;
 
     [Header("Assets")]
