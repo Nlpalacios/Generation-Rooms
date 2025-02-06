@@ -13,7 +13,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private playerState gameState;
 
     [Space, Header("Rooms")]
-    [SerializeField] private GameObject currentRoom;
+    [SerializeField] private RoomSettings currentRoom;
 
     //Private variables
     private Camera playerCamera;
@@ -21,24 +21,38 @@ public class GameManager : MonoBehaviour
     //Singleton
     public static GameManager Instance { get; private set; }
 
-    //
-    public GameObject GetCurrentRoom { get => currentRoom; }
+    public RoomSettings GetCurrentRoom { get => currentRoom; }
     public Player GetPlayer => playerReference; 
     public playerState GetCurrentState { get => gameState; set => gameState = value; }
-    
+
+    private List<ItemsToUnlock> ItemsUnlockeds = new List<ItemsToUnlock>();
 
     //InyectionDependence  || MANAGERS
     private ContainerDependences container;
 
     //Reference managers
-    private GeneratorRooms generatorRooms;
+    //private GeneratorRooms generatorRooms;
     private EnemyManager enemyManager;
 
-    //EVENTS - DELEGATES --------------------------------------------
-    public Action<bool> OnCameraMoving;
+    // Change to future //
+    //Relation between the new item and its corresponding weapon
+    private Dictionary<ItemsToUnlock, PlayerWeapon> itemToWeaponMap = new Dictionary<ItemsToUnlock, PlayerWeapon>(){
+    { ItemsToUnlock.Unlock_Sword, PlayerWeapon.Weapon_Sword },
+    { ItemsToUnlock.Unlock_Hammer, PlayerWeapon.Weapon_Hammer },
+    { ItemsToUnlock.Unlock_Axe, PlayerWeapon.Weapon_Axe },
+    { ItemsToUnlock.Unlock_Boomerang, PlayerWeapon.Weapon_Boomerang }
 
-    
+    };
+
+    // //
+
     #region Star Game
+
+    private void OnEnable()
+    {
+        EventManager.Instance.Subscribe(GameWorldEvents.OnChangeState, SetPlayerState);
+        EventManager.Instance.Subscribe(PlayerEvents.OnUnlockItem, UnlockItem);
+    }
 
     void Awake()
     {
@@ -59,8 +73,8 @@ public class GameManager : MonoBehaviour
     {
         playerCamera = Camera.main;
         InitSingletons();
-        ValidateReferences();
 
+        ValidateReferences();
         SetPlayerState(playerState.Exploration);
     }
 
@@ -75,6 +89,11 @@ public class GameManager : MonoBehaviour
         {
             Debug.LogError($"INVALID CAMERA IN GAME MANAGER");
         }
+    }
+
+    private void InstatiatePlayer()
+    {
+        playerReference = Instantiate(playerReference);
     }
 
     #endregion
@@ -100,6 +119,7 @@ public class GameManager : MonoBehaviour
             Debug.LogError("INSTANCE ERROR");
         }
     }
+
     private void InitializeManagers()
     {
         container = new ContainerDependences();
@@ -118,30 +138,38 @@ public class GameManager : MonoBehaviour
     #region Rooms
 
     // Actual Room
-    public void SaveActualRoom(GameObject room)
+    public void TrySaveActualRoom(RoomSettings room)
     {
-        if (room != GetCurrentRoom)
-        {
-            currentRoom = room;
-            EventManager.Instance.TriggerEvent(GameWorldEvents.OnChangeRoom, room);
-        }
-    }
+        if (room == null || room == GetCurrentRoom) return;
 
-    //EVENTS OF CAMERA -----------------------------
-    public void EventCameraMoving(bool moving = true)
-    {
-        OnCameraMoving?.Invoke(moving);
+        currentRoom = room;
+        EventManager.Instance.TriggerEvent(GameWorldEvents.OnChangeRoom, currentRoom.gameObject);
     }
 
     #endregion
 
     #region Player State
 
-    public void SetPlayerState(playerState newState)
+    public void SetPlayerState(object newState)
     {
-        Resolve<IStateManagment>().SetPlayerState(newState);
-        gameState = newState;
+        playerState state = (playerState)newState;
+        Resolve<IStateManagment>().SetPlayerState(state);
+        gameState = state;
     }
 
     #endregion
+
+
+    private void UnlockItem(object item)
+    {
+        NewItem currentItem = (NewItem)item;
+        if (currentItem == null) return;
+
+        ItemsUnlockeds.Add(currentItem.item);
+
+        if (itemToWeaponMap.TryGetValue(currentItem.item, out PlayerWeapon weapon))
+        {
+            EventManager.Instance.TriggerEvent(CombatEvents.OnChangeWeapon, weapon);
+        }
+    }
 }

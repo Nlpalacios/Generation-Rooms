@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public abstract class RoomSettings : MonoBehaviour
@@ -11,13 +12,36 @@ public abstract class RoomSettings : MonoBehaviour
     [Space, Header("Player Detection")]
     [SerializeField] private Vector2 sizeBox = new Vector2(20,11);
     [SerializeField] private LayerMask playerLayer;
-    [SerializeField] private bool activeDetector;
+    [SerializeField] private LayerMask enemyLayer;
+
+    [Header("Colors")]
+    [SerializeField] private Color blockedColor = Color.white;
+    private Color normalColor = Color.white;
+
+    private List<GameObject> doors = new List<GameObject>();
+    private List<GameObject> openDoors = new List<GameObject>();
+    [SerializeField] private bool isOpenRoom = true;
 
     public Vector2 GetArea { get => sizeBox; }
 
+    private void OnEnable()
+    {
+        EventManager.Instance.Subscribe(EnemiesEvents.OnEnableEnemy, StartEnemyDetector);
+    }
+
+    private void OnDisable()
+    {
+        EventManager.Instance.Unsubscribe(EnemiesEvents.OnEnableEnemy, StartEnemyDetector);
+    }
+
     private void Start()
     {
-        InvokeRepeating("PlayerDetection", 1f, 0.2f);
+        InvokeRepeating(nameof(PlayerDetection), 1f, 0.2f);
+
+        doors.Add(LeftDoor);
+        doors.Add(RightDoor);
+        doors.Add(DownDoor);
+        doors.Add(UpDoor);
     }
 
     private void Update()
@@ -31,17 +55,40 @@ public abstract class RoomSettings : MonoBehaviour
     void PlayerDetection()
     {
         Collider2D player = Physics2D.OverlapBox(transform.position, GetArea, 0f, playerLayer);
-        activeDetector = player ? true : false;
+        if (player == null) return;
 
-        if (player)
+        //Debug
+        Debug.DrawLine(transform.position, player.transform.position, Color.red);
+        GameManager.Instance.TrySaveActualRoom(this);
+    }
+
+    public void StartEnemyDetector(object call)
+    { 
+        if (IsInvoking(nameof(EnemyDetector))) return;
+        InvokeRepeating(nameof(EnemyDetector), .1f, .3f);
+    }
+
+    void EnemyDetector()
+    {
+        Collider2D[] enemies = Physics2D.OverlapBoxAll(transform.position, GetArea, 0f, enemyLayer);
+
+        if (enemies.Length == 0)
         {
-            //Debug
-            Debug.DrawLine(transform.position, player.transform.position, Color.red);
-            activeDetector = true;
+            if (!isOpenRoom)
+            {
+                OpenRoom();
+                isOpenRoom = true;
+            }
 
-            Camera.main.GetComponent<Player_Camera>().ChangePositionCamera(this.gameObject);
+            CancelInvoke(nameof(EnemyDetector));
+            return; 
         }
 
+        if (isOpenRoom)
+        {
+            CloseRoom();
+            isOpenRoom = false;
+        }
     }
 
     //DOOR MANAGMENT ------------------------
@@ -69,6 +116,41 @@ public abstract class RoomSettings : MonoBehaviour
                 Debug.Log("No se asigno una puerta correcta");
                 break;
         }
+    }
+
+    public void CloseRoom()
+    {
+        foreach (GameObject actualDoor in doors)
+        {
+            if (actualDoor.activeInHierarchy) continue;
+
+            actualDoor.SetActive(true);
+
+            if (actualDoor.TryGetComponent(out SpriteRenderer spriteRenderer))
+            {
+                normalColor = spriteRenderer.color;
+                spriteRenderer.color = blockedColor;
+            }
+
+            openDoors.Add(actualDoor);
+        }
+    }
+
+    public void OpenRoom()
+    {
+        if (openDoors.Count <= 0) return;
+
+        foreach (GameObject actualDoor in openDoors)
+        {
+            if (actualDoor.TryGetComponent(out SpriteRenderer spriteRenderer))
+            {
+                spriteRenderer.color = normalColor;
+            }
+
+            actualDoor.SetActive(false);
+        }
+
+        openDoors.Clear();
     }
 
     //GIZMOS --------------------------------

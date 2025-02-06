@@ -25,12 +25,17 @@ public class StateManager : IStateManagment
                 Exploration();
                 break;
 
-            case playerState.Atack:
+            case playerState.Attack:
                 break;
 
             case playerState.OpenCards:
                 OpenCards();
                 break;
+
+            case playerState.Inspection:
+                Inspection();
+                break;
+
         }
 
         Debug.LogWarning($"NEW: Player State - {currentState}");
@@ -39,8 +44,10 @@ public class StateManager : IStateManagment
     #region Exploration
     private void Exploration()
     {
+        EventManager.Instance.TriggerEvent(PlayerEvents.OnStopMovement, false);
         SetSlowMotion(false);
     }
+
     #endregion
 
     #region Attack
@@ -55,6 +62,9 @@ public class StateManager : IStateManagment
 
     private void SetSlowMotion(bool isActive)
     {
+        if (!isActive && Time.timeScale == 1 || 
+             isActive && Time.timeScale != 1) return;
+
         if (isActive) { 
             Time.timeScale = .5f;
         }
@@ -63,4 +73,8 @@ public class StateManager : IStateManagment
         }
     }
 
+    private void Inspection()
+    {
+        EventManager.Instance.TriggerEvent(PlayerEvents.OnStopMovement, true);
+    }
 }

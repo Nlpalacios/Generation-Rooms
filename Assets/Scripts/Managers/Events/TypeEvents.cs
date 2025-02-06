@@ -1,5 +1,4 @@
 using System;
-using UnityEngine;
 
 public class TypeEvents 
 {
@@ -15,11 +14,22 @@ public enum GameWorldEvents
 }
 
 [Serializable]
+public enum CombatEvents
+{
+    OnChangeTypeCombat,
+    OnChangeWeapon
+}
+
+[Serializable]
 public enum PlayerEvents
 {
+    OnUnlockItem,
     OnStopMovement,
     OnReceiveDamage,
-    OnChangeHealth
+    OnDeath,
+
+    OnChangeExperience,
+    OnLevelUp
 }
 
 [Serializable]
@@ -33,6 +43,7 @@ public enum RoomsEvents
 [Serializable]
 public enum EnemiesEvents
 {
+    OnEnableEnemy,
     OnReceiveDamage,
     OnUnlockDamage
 }

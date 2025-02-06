@@ -1,30 +1,27 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor.Search;
 using UnityEngine;
-using UnityEngine.Rendering.Universal;
-using UnityEngine.UIElements;
 
 public class GeneratorRooms : MonoBehaviour
 {
     [Space, Header("Prefab")]
     [SerializeField] SO_RoomsManager SO_DataRoom;
+    [SerializeField] private Transform roomsPatern;
 
     [Space, Header("Num Rooms")]
     [SerializeField] private int maxRooms = 10;
 
-    [Space, Header("Matriz attributes")]
+    [Header("Grid Configuration")]
     [SerializeField] int gridSizeX = 10;
     [SerializeField] int gridSizeY = 10;
-
-    [Header("Cell attributes")]
     [SerializeField] int RoomWidth = 20;
     [SerializeField] int RoomHeight = 12;
 
     [Space, Header("Special attributes for generation")]
     [SerializeField] private int maxDistanceBetweenRewards;
+
+    public bool completeInstantiate = false;
 
     #region Debug
 
@@ -41,15 +38,15 @@ public class GeneratorRooms : MonoBehaviour
     private List<Vector2Int> roomPositions = new List<Vector2Int>();
 
     //Private variables
-    private Dictionary<Vector2Int, GameObject> dRoomsAndPositions = new Dictionary<Vector2Int, GameObject>();
+    private Dictionary<Vector2Int, GameObject> dicRoomsAndPositions = new Dictionary<Vector2Int, GameObject>();
     private Dictionary<Vector2Int, TypeRoom> typeAndPosition = new Dictionary<Vector2Int, TypeRoom>();
     private Queue<Vector2Int> queueRooms = new Queue<Vector2Int>();
 
     //Counters
     private int positionCount = 0;
+
     //Private variables
     private bool generationPositionComplete = false;
-
 
     //InitialRoom
     Vector2Int positionCenterGrid;
@@ -76,6 +73,13 @@ public class GeneratorRooms : MonoBehaviour
 
     void Start()
     {
+        GenerateRooms();
+    }
+
+    private void GenerateRooms()
+    {
+        ClearPreviousRooms();
+
         roomGrid = new int[gridSizeY, gridSizeX];
         queueRooms = new Queue<Vector2Int>();
 
@@ -85,20 +89,23 @@ public class GeneratorRooms : MonoBehaviour
         SelectPoints();
     }
 
+    private void ClearPreviousRooms()
+    {
+        points.ForEach(Destroy);
+
+        points.Clear();
+        queueRooms.Clear();
+        roomPositions.Clear();
+        typeAndPosition.Clear();
+        dicRoomsAndPositions.Clear();
+    }
+
     //Clear variables and try again 
     void RegenerateRooms()
     {
         Debug.LogWarning("RE-GENERATE ROOMS");
 
-        //Debugging
-        points.ForEach(Destroy);
-        points.Clear();
-
-        //Clear preference
-        typeAndPosition.Clear();
-        queueRooms.Clear();
-        roomPositions.Clear();
-
+        ClearPreviousRooms();
         roomGrid = new int[gridSizeX, gridSizeY];
 
         positionCount = 0;
@@ -116,16 +123,16 @@ public class GeneratorRooms : MonoBehaviour
     ///-----------------------------------------------------------------
     private void SelectPoints()
     {
-        int countWhile = 0;
+        int attempts = 0;
         pointGeneration(positionCenterGrid);
 
         while (!generationPositionComplete)
         {
             if (queueRooms.Count <= 0)
             {
-                countWhile++;
+                attempts++;
 
-                if (countWhile >= 50)
+                if (attempts >= 50)
                 {
                     RegenerateRooms();
                     return;
@@ -151,7 +158,7 @@ public class GeneratorRooms : MonoBehaviour
                 generationPositionComplete = true;
                 break;
             }
-        } 
+        }
 
         if (!generationPositionComplete) return;
         SpawnRooms();
@@ -174,7 +181,7 @@ public class GeneratorRooms : MonoBehaviour
         //Display point for references
         var position = Instantiate(pointReference, GetPositionGrid(roomIndex), Quaternion.identity);
         position.name = $"Position: {positionCount}";
-        position.transform.SetParent(transform, false);
+        position.transform.SetParent(roomsPatern, false);
 
         points.Add(position);
 
@@ -211,10 +218,6 @@ public class GeneratorRooms : MonoBehaviour
             {
                 typeAndPosition.Add(roomPositions[i], TypeRoom.Enemy);
             }
-            else
-            {
-                    Debug.Log("WTF");
-            }
         }
 
         foreach (Vector2Int position in typeAndPosition.Keys)
@@ -224,15 +227,17 @@ public class GeneratorRooms : MonoBehaviour
 
             var roomObject = Instantiate(roomPrefab, GetPositionGrid(position), Quaternion.identity);
             roomObject.name = $"Room: {roomCount}";
-            roomObject.transform.SetParent(transform, false);
+            roomObject.transform.SetParent(roomsPatern, false);
 
             //-----------------------------------------------------------
             //Add object and position in list
-            dRoomsAndPositions.Add(position, roomObject);
+            dicRoomsAndPositions.Add(position, roomObject);
             roomCount++;
 
             OpenDoors(roomObject, position);
         }
+
+        completeInstantiate = true;
     }
 
     #endregion
@@ -270,7 +275,7 @@ public class GeneratorRooms : MonoBehaviour
             Vector2Int roomIndex = roomPositions[i];
 
             if (CountAdjacentRooms(roomIndex) > 1 ||
-                roomIndex == positionCenterGrid   ||
+                roomIndex == positionCenterGrid ||
                 typeAndPosition.ContainsKey(roomIndex))
             {
                 continue;
@@ -330,14 +335,14 @@ public class GeneratorRooms : MonoBehaviour
 
     RoomSettings GetRoomSettings(Vector2Int index)
     {
-        if (!dRoomsAndPositions.ContainsKey(index)) return null;
+        if (!dicRoomsAndPositions.ContainsKey(index)) return null;
 
-        if (dRoomsAndPositions.TryGetValue(index, out GameObject room))
+        if (dicRoomsAndPositions.TryGetValue(index, out GameObject room))
         {
             if (room != null)
             {
-               RoomSettings roomSettings = room.GetComponent<RoomSettings>();
-               return roomSettings;
+                RoomSettings roomSettings = room.GetComponent<RoomSettings>();
+                return roomSettings;
             }
         }
 
@@ -373,10 +378,10 @@ public class GeneratorRooms : MonoBehaviour
             return;
         }
 
-        Vector2Int leftPosition  = new Vector2Int(x - 1, y);
+        Vector2Int leftPosition = new Vector2Int(x - 1, y);
         Vector2Int rightPosition = new Vector2Int(x + 1, y);
-        Vector2Int upPosition    = new Vector2Int(x, y + 1);
-        Vector2Int downPosition  = new Vector2Int(x, y - 1);
+        Vector2Int upPosition = new Vector2Int(x, y + 1);
+        Vector2Int downPosition = new Vector2Int(x, y - 1);
 
         //Left room
         if (x > 0 && roomGrid[x - 1, y] != 0)
@@ -427,11 +432,13 @@ public class GeneratorRooms : MonoBehaviour
     //GIZMOS --------------------------------------------------------------
     private void OnDrawGizmos()
     {
-        for (int i = 0; i < gridSizeX; i++){
+        for (int i = 0; i < gridSizeX; i++)
+        {
 
-            for (int j = 0; j < gridSizeY; j++){
+            for (int j = 0; j < gridSizeY; j++)
+            {
                 // Calcular la posición de cada cubo en la matriz
-                Vector3 position = GetPositionGrid(new Vector2Int(i,j));
+                Vector3 position = GetPositionGrid(new Vector2Int(i, j));
 
                 //Tamaño del cubo 
                 Vector3 CubeSize = new Vector3(RoomWidth, RoomHeight);
