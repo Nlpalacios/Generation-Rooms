@@ -1257,7 +1257,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8093934040782639534}
   - component: {fileID: 222540910296377242}
-  - component: {fileID: -8225759166864947180}
+  - component: {fileID: 836066980846113800}
   m_Layer: 10
   m_Name: Room_Final
   m_TagString: Untagged
@@ -1337,7 +1337,7 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &-8225759166864947180
+--- !u!114 &836066980846113800
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1346,7 +1346,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 5158192040073548485}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 73c35ef8cbfb8c24bb3a18f28612bc2f, type: 3}
+  m_Script: {fileID: 11500000, guid: 2912a0266e1023844b946c9da3be421d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   LeftDoor: {fileID: 941812453915005000}
@@ -1362,6 +1362,8 @@ MonoBehaviour:
     m_Bits: 128
   blockedColor: {r: 0.24313726, g: 0.24313726, b: 0.24313726, a: 1}
   isOpenRoom: 1
+  finalDoor: {fileID: 4080258298076320673, guid: 2cda26b290d4b00448781f8480b65cae, type: 3}
+  scaleDoor: {x: 0.08, y: 0.12, z: 0}
 --- !u!1 &5717433595229605330
 GameObject:
   m_ObjectHideFlags: 0

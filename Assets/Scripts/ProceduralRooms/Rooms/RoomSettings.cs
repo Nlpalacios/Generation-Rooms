@@ -22,13 +22,14 @@ public abstract class RoomSettings : MonoBehaviour
     private List<GameObject> openDoors = new List<GameObject>();
     [SerializeField] private bool isOpenRoom = true;
 
-    public Vector2 GetArea { get => sizeBox; }
 
-    private void OnEnable()
+    public Vector2 GetArea { get => sizeBox; }
+    public bool IsOpenRoom { get => isOpenRoom; set => isOpenRoom = value; }
+
+    private void Awake()
     {
         EventManager.Instance.Subscribe(EnemiesEvents.OnEnableEnemy, StartEnemyDetector);
     }
-
     private void OnDisable()
     {
         EventManager.Instance.Unsubscribe(EnemiesEvents.OnEnableEnemy, StartEnemyDetector);
@@ -43,7 +44,6 @@ public abstract class RoomSettings : MonoBehaviour
         doors.Add(DownDoor);
         doors.Add(UpDoor);
     }
-
     private void Update()
     {
         NewUpdate();
@@ -63,9 +63,9 @@ public abstract class RoomSettings : MonoBehaviour
     }
 
     public void StartEnemyDetector(object call)
-    { 
+    {
         if (IsInvoking(nameof(EnemyDetector))) return;
-        InvokeRepeating(nameof(EnemyDetector), .1f, .3f);
+        InvokeRepeating(nameof(EnemyDetector), .1f, 2);
     }
 
     void EnemyDetector()
@@ -74,20 +74,20 @@ public abstract class RoomSettings : MonoBehaviour
 
         if (enemies.Length == 0)
         {
-            if (!isOpenRoom)
+            if (!IsOpenRoom)
             {
                 OpenRoom();
-                isOpenRoom = true;
+                IsOpenRoom = true;
             }
 
             CancelInvoke(nameof(EnemyDetector));
             return; 
         }
 
-        if (isOpenRoom)
+        if (IsOpenRoom)
         {
             CloseRoom();
-            isOpenRoom = false;
+            IsOpenRoom = false;
         }
     }
 
@@ -156,8 +156,26 @@ public abstract class RoomSettings : MonoBehaviour
     //GIZMOS --------------------------------
     private void OnDrawGizmos()
     {
-        Gizmos.color = Color.green;
+        Gizmos.color = Color.red;
         Gizmos.DrawWireCube(transform.position, GetArea);
     }
-}
+    //Max 5
+    public void SpawnItem(byte numItems, PlayerWeapon[] types)
+    {
+        if (numItems <= 0) return;
 
+        float y = 1.2f;
+        float spacing = 2.5f; 
+        float totalWidth = (numItems - 1) * spacing;
+        float startX = -totalWidth / 2f; 
+
+        for (byte i = 0; i < numItems; i++)
+        {
+            Vector3 pos = new Vector3(startX + (i * spacing), y);
+            Vector3 finalPos = pos + transform.position;
+
+            PlayerWeapon weapon = (i < types.Length) ? types[i] : PlayerWeapon.None;
+            ItemManager.Instance.SpawnNewMeleeWeapon(finalPos, weapon);
+        }
+    }
+}
