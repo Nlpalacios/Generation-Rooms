@@ -1,9 +1,8 @@
-using UnityEngine;
 
 public interface IAbility
 {
-    public TypeAbility GetTypeAbility();
-    public void Initialize(SO_Ability data);
+    public NameAbility GetTypeAbility();
+    public void Initialize(AbilityBaseData data);
     public void ActivateAbility();
     public void DeactivateAbility();
     public bool IsAbilityActive();

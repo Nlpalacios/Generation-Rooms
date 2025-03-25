@@ -4,12 +4,12 @@ public class Ability_Rocks : BaseAbilitiy
 {
     private RockObject rayAbility;
 
-    public override void Initialize(SO_Ability data)
+    public override void Initialize(AbilityBaseData data)
     {
         base.InitializeFindEnemiesComponent();
         base.Initialize(data);
 
-        currentAbility = TypeAbility.Ability_Rock;
+        currentAbility = NameAbility.Ability_Rock;
         rayAbility = PrefabAbility.GetComponent<RockObject>();
         if (rayAbility == null) { Debug.LogError("No effect in DATA"); return; }
     }
@@ -20,7 +20,7 @@ public class Ability_Rocks : BaseAbilitiy
             Debug.LogError("Rock effect prefab is not assigned!");
             return;
         }
-        FindEnemiesComponent.IntantiateAbilityPrefab(PrefabAbility, GetData().range, GetData().damage);
+        FindEnemiesComponent.IntantiateAbilityPrefab(PrefabAbility, GetBasicData().range, GetBasicData().damage);
     }
 
     public override void DeactivateAbility()

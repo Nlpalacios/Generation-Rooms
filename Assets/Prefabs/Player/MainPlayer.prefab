@@ -13,9 +13,9 @@ GameObject:
   - component: {fileID: 5934720963398578160}
   - component: {fileID: 2712229450564429168}
   - component: {fileID: 448161522179706783}
+  - component: {fileID: 8886968426906297942}
   - component: {fileID: 1202406096237215737}
   - component: {fileID: 1621297279266332145}
-  - component: {fileID: 8886968426906297942}
   - component: {fileID: 7043765802919589873}
   - component: {fileID: 8740405556091609058}
   m_Layer: 3
@@ -190,6 +190,19 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &8886968426906297942
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5179163938394887434}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25ebbb1dee141ef4fb20ee362dbe41c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerStats: {fileID: 1202406096237215737}
 --- !u!114 &1202406096237215737
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -203,11 +216,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerSpeed: 6
+  maxTotalPlayerSpeed: 9
   maxHearts: 6
   currentHearts: 0
+  maxTotalHearts: 32
   playerLevel: 0
-  maxCardsUpgrades: 3
+  currentExperience: 0
   maxExperience: 100
+  currentMaxCards: 2
+  maxTotalCards: 5
+  currentMaxAbilities: 2
+  maxTotalAbilities: 5
 --- !u!114 &1621297279266332145
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -226,19 +245,6 @@ MonoBehaviour:
     action: 0
   - nameInput: Attack
     action: 1
---- !u!114 &8886968426906297942
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5179163938394887434}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 25ebbb1dee141ef4fb20ee362dbe41c5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playerStats: {fileID: 1202406096237215737}
 --- !u!114 &7043765802919589873
 MonoBehaviour:
   m_ObjectHideFlags: 0

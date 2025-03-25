@@ -10,7 +10,6 @@ public class FindEnemiesComponent : Component
             GameObject enemy = EnemyManager.Instance.GetDiferentActiveEnemy();
             if (enemy == null)
             {
-                Debug.LogWarning("No active enemy available for ability instantiation.");
                 continue;
             }
 

@@ -1,7 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using System.Collections.Generic;
 using Random = UnityEngine.Random;
 
 public class UpgradeSelector : MonoBehaviour
@@ -10,120 +10,303 @@ public class UpgradeSelector : MonoBehaviour
     [SerializeField] private UpgradeIcons icons;
 
     [Header("Improvement probability")]
-    [SerializeField] private float newAbilityChance = 0.2f;
-    [SerializeField] private float statUpgradeChance = 0.5f;
-    [SerializeField] private float abilityUpgradeChance = 0.3f;
+    [SerializeField] private Percentages constantPercents;
+    private Percentages currentPercents;
 
-    private List<PlayerBasicStats> currentUpgrades = new List<PlayerBasicStats>();
-
-    private const float HEART_RESTORE_CHANCE = 0.7f;
-
-    public UpgradeData GenerateData()
+    [Serializable]
+    public class Percentages
     {
-        UpgradeData data = new UpgradeData();
-        //float roll = Random.value;
+        public float newAbilityPercent = 0.2f;
+        public float playerUpgradePercent = 0.5f;
+        public float abilityUpgradePercent = 0.3f;
+    }
+    private HashSet<NameAbility> invalidAbilities = new HashSet<NameAbility>();
+    private readonly float HEART_RESTORE_CHANCE = 0.1f;
 
-        var posibleUpgrades = GetPosiblePlayerUpgrade();
-        if (posibleUpgrades.Count == 0) return null;
+    //Preferences
+    [Header("Preferences")]
+    [SerializeField] private int totalAbilityCards = 1;
+    [SerializeField] private int totalUpgradeCards = 2;
 
-        //PROBAR - PARA QUE NO SIEMPRE SALGA MEJORA DE CORAZON
-        float totalChance = posibleUpgrades.Values.Sum();
-        float randomRoll = Random.value * totalChance;
+    [SerializeField] private int currentAbilityCards = 0;
+    [SerializeField] private int currentUpgradeCards = 0;
 
-        float cumulativeChance = 0f;
-        PlayerBasicStats upgrade = PlayerBasicStats.speed;
+    int GetRandomIndex(int max) => Random.Range(0, max);
 
-        foreach (var entry in posibleUpgrades)
+    private void Start()
+    {
+        currentPercents = constantPercents;
+    }
+
+    public void ResetPreferences()
+    {
+        currentAbilityCards = 0;
+        currentUpgradeCards = 0;
+
+        currentPercents = constantPercents;
+    }
+
+    public AbilityBasicData GenerateData()
+    {
+        const int maxAttempts = 100;
+        int attempts = 0;
+
+        while (attempts < maxAttempts)
         {
-            cumulativeChance += entry.Value;
-            if (randomRoll <= cumulativeChance)
+            float roll = Random.value;
+            attempts++;
+
+            if (roll < currentPercents.newAbilityPercent)
             {
-                upgrade = entry.Key;
-                break;
+                AbilityBasicData newAbilityData = TryGenerateNewAbility();
+                if (newAbilityData != null) return newAbilityData;
+            }
+
+            if (roll >= currentPercents.newAbilityPercent && roll < (currentPercents.newAbilityPercent + currentPercents.abilityUpgradePercent)) 
+            {
+                AbilityBasicData abilityUpgradeData = TryGenerateAbilityUpgrade();
+                if (abilityUpgradeData != null) return abilityUpgradeData;
+            }
+
+            AbilityBasicData playerUpgradeData = TryGeneratePlayerUpgrade();
+            if (playerUpgradeData != null) return playerUpgradeData;
+        }
+
+        Debug.Log("GenerateData: No se pudo generar un upgrade válido después de varios intentos.");
+        return null;
+    }
+
+    private AbilityBasicData TryGeneratePlayerUpgrade()
+    {
+        int specialUpgrade = GetRandomIndex(100);
+
+        if (specialUpgrade < 10)
+        {
+            return ConfigurePlayerUpgradeData(PlayerBasicStats.None, 0, true);
+        }
+
+        //Player Upgrade
+        var posibleUpgrades = PlayerStats.Instance.GetRandomPlayerUpgrade();
+        if (posibleUpgrades.Item1 == PlayerBasicStats.None)
+        {
+            Debug.Log("ERROR - NO PLAYER UPGRADES");
+            return null;
+        }
+
+        return ConfigurePlayerUpgradeData(posibleUpgrades.Item1, posibleUpgrades.Item2);
+    }
+
+    private AbilityBasicData TryGenerateAbilityUpgrade()
+    {
+        if (currentUpgradeCards >= totalUpgradeCards || !AbilityController.Instance.HasAbilities())
+        {
+            currentPercents.abilityUpgradePercent = 0;
+            AdjustProbabilities();
+
+            return null;
+        }
+
+        var abilities = AbilityController.Instance.GetCurrentAbilities()
+                   .Where(ability => !invalidAbilities.Contains(ability))
+                   .ToList();
+
+        if (abilities.Count <= 0) return null;
+
+        int randomAbilityIndex = GetRandomIndex(abilities.Count);
+        NameAbility ability = abilities[randomAbilityIndex];
+        AbilityUpgrades upgrade = SelectUpgrade(ability);
+
+        if (upgrade == AbilityUpgrades.None)
+        {
+            invalidAbilities.Add(ability);
+            return null;
+        }
+
+        currentUpgradeCards++;
+        return ConfigureAbilityUpgradeData(ability, upgrade);
+    }
+
+    private AbilityBasicData TryGenerateNewAbility()
+    {
+        List<NameAbility> totalAbilities = Enum.GetValues(typeof(NameAbility)).Cast<NameAbility>()
+               .Where(type => type != NameAbility.None).ToList();
+
+        List<NameAbility> availableAbilities = totalAbilities
+            .Where(type => !AbilityController.Instance.HasAbility(type)).ToList();
+
+        if (AbilityController.Instance.GetCurrentAbilities().Count == totalAbilities.Count - 1 || 
+            availableAbilities.Count == 0 || currentAbilityCards >= totalAbilityCards)
+        {
+            currentPercents.newAbilityPercent = 0;
+            AdjustProbabilities();
+
+            return null;
+        }
+
+        int randomIndex = GetRandomIndex(availableAbilities.Count);
+        NameAbility newAbility = availableAbilities[randomIndex];
+
+        currentAbilityCards++;
+        return ConfigureNewAbilityData(newAbility);
+    }
+    private AbilityUpgrades SelectUpgrade(NameAbility ability)
+    {
+        List<AbilityUpgrades> abilityUpgrades = new List<AbilityUpgrades>();
+
+        AbilityBaseData currentAbility = AbilityController.Instance.database.GetAbilityData(ability);
+        SO_NewAbility dataAbility = null;
+
+        if (currentAbility != null && currentAbility is SO_NewAbility)
+        {
+            dataAbility = (SO_NewAbility)currentAbility;
+        }
+        else
+        {
+            Debug.LogError("NOT FIND UPGRADE DATA");
+            return AbilityUpgrades.None;
+        }
+
+        foreach (AbilityUpgrades type in Enum.GetValues(typeof(AbilityUpgrades)))
+        {
+            if (type == AbilityUpgrades.None) continue;
+
+            if (dataAbility.ValidUpgrade(type))
+            {
+                abilityUpgrades.Add(type);
             }
         }
 
-        data = ConfigurePlayerUpgradeData(upgrade);
-        currentUpgrades.Add(upgrade);
-        return data;
-
-        //AÑADIRLA DESPUES DE IMPLEMENTAR AL MENOS 2 HABILIDADES
-        ////Player Upgrade
-        //if (roll < statUpgradeChance)
-        //{
-           
-        //}
-
-        ////Ability Upgrade
-        //else if (roll > statUpgradeChance && roll < (statUpgradeChance + abilityUpgradeChance) 
-        //    && AbilityManager.Instance.HasAbilities())
-        //{
-
-        //    return data;
-        //}
-
-        ////New Ability
-        //return data;
-
+        if (abilityUpgrades.Count <= 0) return AbilityUpgrades.None;
+        return abilityUpgrades[GetRandomIndex(abilityUpgrades.Count)];
     }
 
-    private UpgradeData ConfigurePlayerUpgradeData(PlayerBasicStats upgrade)
+    private AbilityBasicData ConfigureNewAbilityData(NameAbility ability)
     {
-        UpgradeData data = new UpgradeData
+        AbilityBaseData currentAbility = AbilityController.Instance.database.GetAbilityData(ability);
+        if (currentAbility == null) { Debug.LogError("NOT FIND UPGRADE DATA"); return null; }
+         
+        AbilityBasicData data = new AbilityBasicData
+        {
+            name = currentAbility.abilityName,
+            description = currentAbility.description,
+
+            upgradeType = UpgradeType.NewAbility,
+            typeAbility = ability,
+
+            playerUpgrades = PlayerBasicStats.None,
+            abilityUpgrades = AbilityUpgrades.None,
+
+            icon = currentAbility.icon,
+        };
+
+        return data;
+    }
+    private AbilityBasicData ConfigureAbilityUpgradeData(NameAbility ability, AbilityUpgrades upgradeData)
+    {
+        SO_NewAbility dataAbility = null;
+        AbilityBaseData currentAbility = AbilityController.Instance.database.GetAbilityData(ability);
+
+        if (currentAbility  != null && currentAbility is SO_NewAbility)
+        {
+            dataAbility = (SO_NewAbility)currentAbility;
+        } 
+        else
+        {
+            Debug.LogError("NOT FIND UPGRADE DATA");
+            return null; 
+        }
+
+        AbilityBasicData data = new AbilityBasicData
+        {
+            upgradeType = UpgradeType.AbilityUpgrade,
+            playerUpgrades = PlayerBasicStats.None,
+
+            typeAbility = ability,
+            abilityUpgrades = upgradeData,
+
+            valueUpgrade = GetRandomIndex(dataAbility.GetMaxValues(upgradeData)),
+            icon = dataAbility.icon,
+        };
+
+        return data;
+    }
+
+    private AbilityBasicData ConfigurePlayerUpgradeData(PlayerBasicStats upgrade, float value, bool specialUpgrade = false)
+    {
+        AbilityBasicData data = null;
+
+        if (specialUpgrade)
+        {
+            SO_PlayerAbility specialPlayerUpgrade = AbilityController.Instance.database.GetRandomPlayerAbility();
+
+            data = new AbilityBasicData
+            {
+                upgradeType = UpgradeType.playerUpgrade,
+
+                playerUpgrades = specialPlayerUpgrade.type,
+                valueUpgrade = specialPlayerUpgrade.upgradeValue,
+
+                name = specialPlayerUpgrade.name,
+                description = specialPlayerUpgrade.description,
+
+                singleUse = specialPlayerUpgrade.singleUse,
+                restoreHearts = specialPlayerUpgrade.restoreHearts,
+
+                icon = specialPlayerUpgrade.icon
+            };
+
+            return data;
+        }
+
+        AbilityValues valuesUpgrade = new AbilityValues()
+        {
+            expCost = GetRandomIndex(50),
+            delay   = GetRandomIndex(150),
+
+            range   = 0,
+            damage = 0,
+        };
+
+        if (valuesUpgrade == null) { Debug.LogError("NOT FIND PLAYER UPGRADES VALUES"); return null; }
+
+        data = new AbilityBasicData
         {
             upgradeType = UpgradeType.playerUpgrade,
+
             playerUpgrades = upgrade,
+            abilityValues = valuesUpgrade,
+            valueUpgrade = value,
+
+            singleUse = specialUpgrade,
             icon = GetPlayerUpgradeIcon(upgrade)
         };
 
-        bool basicUpgrade = true;
+        if (upgrade == PlayerBasicStats.totalCards || upgrade == PlayerBasicStats.totalUpgrades)
+        {
+            data.singleUse = true;
+        }
 
         switch (upgrade)
         {
-            case PlayerBasicStats.speed:
-                data.stat = 0.2f;
-                basicUpgrade = false;
-                break;
-
             case PlayerBasicStats.hearts:
-                int currentHearts = PlayerStats.Instance.CurrentHearts;
-                if (currentHearts < PlayerStats.Instance.GetMaxHearts)
-                {
-                    float chanceRestoreHearts = Random.value;
-                    if (chanceRestoreHearts < HEART_RESTORE_CHANCE)
-                    {
-                        data.restoreHearts = true;
-                        data.stat = 0;
-                        basicUpgrade = false;
-                    }
-                }
-                break;
 
-                //In case of Total Cards or Total upgrades are a "Basic Upgrades" and just plus one
+                float chanceRestoreHearts = Random.value;
+                if (chanceRestoreHearts < HEART_RESTORE_CHANCE)
+                {
+                    data.restoreHearts = true;
+                    data.valueUpgrade = 0;
+                }
+
+            break;
         }
 
-        if (basicUpgrade)
+        float chanceSingleUse = Random.value;
+        if (chanceSingleUse < 0.6)
         {
-            data.stat = 1f;
+            data.singleUse = true;
         }
 
         return data;
-    }
-
-    public Dictionary<PlayerBasicStats, float> GetPosiblePlayerUpgrade()
-    {
-        var upgrades = new Dictionary<PlayerBasicStats, float>();
-
-        foreach (PlayerBasicStats currentType in Enum.GetValues(typeof(PlayerBasicStats)))
-        {
-            if (currentUpgrades.Contains(currentType)) continue;
-            float difference = PlayerStats.Instance.GetDifferenceStats(currentType);
-            if (difference <= 0f) continue;
-
-            upgrades.Add(currentType, difference);
-        }
-
-        return upgrades;
     }
 
     private Sprite GetPlayerUpgradeIcon(PlayerBasicStats typeUpgrade)
@@ -149,9 +332,17 @@ public class UpgradeSelector : MonoBehaviour
         return icon;
     }
 
-    public void CompleteGenerate()
+    private void AdjustProbabilities()
     {
-        currentUpgrades.Clear();
+        float total = currentPercents.newAbilityPercent + currentPercents.playerUpgradePercent + currentPercents.abilityUpgradePercent;
+        if (total <= 0f) return;
+
+        float scale = 1f / total;
+        currentPercents.newAbilityPercent *= scale;
+        currentPercents.playerUpgradePercent *= scale;
+        currentPercents.abilityUpgradePercent *= scale;
+
+        //Debug.Log($"Adjusted Probabilities -> New Ability: {currentPercents.newAbilityPercent}, Player Upgrade: {currentPercents.playerUpgradePercent}, Ability Upgrade: {currentPercents.abilityUpgradePercent}");
     }
 }
 

@@ -3,11 +3,11 @@ using UnityEngine;
 
 public abstract class BaseAbilitiy : MonoBehaviour, IAbility
 {
-    public TypeAbility currentAbility;
+    public NameAbility currentAbility;
 
     //Data
-    private SO_Ability initialData;
-    private SO_Ability dataModified;
+    private SO_NewAbility originalData;
+    private SO_NewAbility dataModified;
 
     private GameObject prefabAbility;
     private FindEnemiesComponent findEnemiesComponent;
@@ -17,10 +17,13 @@ public abstract class BaseAbilitiy : MonoBehaviour, IAbility
 
 
     //Init
-    public virtual void Initialize(SO_Ability data)
+    public virtual void Initialize(AbilityBaseData data)
     {
-        initialData = ScriptableObject.Instantiate(data);
-        PrefabAbility = initialData.effect;
+        SO_NewAbility newData = (SO_NewAbility)data;
+        if (data == null) return;
+
+        originalData = ScriptableObject.Instantiate(newData);
+        PrefabAbility = originalData.effect;
 
         if (PrefabAbility == null) { Debug.LogError("No effect in DATA"); return; }
         ResetData(null);
@@ -46,9 +49,9 @@ public abstract class BaseAbilitiy : MonoBehaviour, IAbility
     //Data Management
     public virtual void ResetData(object call)
     {
-        if (dataModified == null || dataModified != initialData)
+        if (dataModified == null || dataModified != originalData)
         {
-            dataModified = initialData;
+            dataModified = originalData;
         }
     }
     public void SetData(AbilityUpgrades typeData, int newData, bool sum = true)
@@ -59,15 +62,27 @@ public abstract class BaseAbilitiy : MonoBehaviour, IAbility
             return;
         }
 
-        int currentValue = dataModified.GetStat(typeData);
-        dataModified.SetStat(typeData, sum ? currentValue + newData : currentValue - newData);
+        int currentValue = GetStatData(typeData);
+        SetStatData(typeData, sum ? currentValue + newData : currentValue - newData);
     }
-    public SO_Ability GetData()
+
+
+    public AbilityValues GetBasicData()
     {
-        return dataModified;
+        return dataModified.basicValues;
     }
-    public TypeAbility GetTypeAbility()
+    public NameAbility GetTypeAbility()
     {
         return currentAbility;
+    }
+
+
+    public int GetStatData(AbilityUpgrades type)
+    {
+        return 0;
+    }
+    public void SetStatData(AbilityUpgrades type, float value)
+    {
+
     }
 }

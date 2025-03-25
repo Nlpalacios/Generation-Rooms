@@ -4,12 +4,12 @@ public class Ability_Ray : BaseAbilitiy
 {
     private RayObject rayAbility;
 
-    public override void Initialize(SO_Ability data)
+    public override void Initialize(AbilityBaseData data)
     {
         base.InitializeFindEnemiesComponent();
         base.Initialize(data);
 
-        currentAbility = TypeAbility.Ability_Ray;
+        currentAbility = NameAbility.Ability_Ray;
         rayAbility = PrefabAbility.GetComponent<RayObject>();
         if (rayAbility == null) { Debug.LogError("No effect in DATA"); return; }
     }
@@ -21,7 +21,7 @@ public class Ability_Ray : BaseAbilitiy
             Debug.LogError("Ray effect prefab is not assigned!");
             return;
         }
-        FindEnemiesComponent.IntantiateAbilityPrefab(PrefabAbility, GetData().range, GetData().damage);
+        FindEnemiesComponent.IntantiateAbilityPrefab(PrefabAbility, GetBasicData().range, GetBasicData().damage);
     }
 
     public override void DeactivateAbility()
