@@ -55,7 +55,8 @@ public class InputManager : MonoBehaviour
 public enum InputActionsEnum
 {
     Movement,
-    Attack,
+    Attack_Distance,
+    Attack_Melee,
     OpenCards
 
         //ADD MORE INPUTS

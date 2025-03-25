@@ -147,6 +147,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6420d2f81643f254ab065135d2f1f49c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  item: 2
-  distanceUp: 1.2
+  typeItem: 0
+  playerItem: 0
+  weapon: 0
+  floatSpeed: 3
+  floatHeight: 0.2
+  principalImage: {fileID: 1887103059978018309}
+  pickUpDistance: 1.3
   timeAnimation: 0.5
+  spritesWeaponItem:
+  - name: Weapon_Sword
+    item: 1
+    sprite: {fileID: 21300450, guid: c2957f4d831870a48af4ec016652548d, type: 3}
+  - name: Weapon_Hammer
+    item: 2
+    sprite: {fileID: 21300462, guid: c2957f4d831870a48af4ec016652548d, type: 3}
+  - name: Weapon_Axe
+    item: 3
+    sprite: {fileID: 21300452, guid: c2957f4d831870a48af4ec016652548d, type: 3}
+  - name: Weapon_Boomerang
+    item: 5
+    sprite: {fileID: 21300470, guid: c2957f4d831870a48af4ec016652548d, type: 3}
+  spritesPlayerItem:
+  - name: 
+    item: 1
+    sprite: {fileID: 21301102, guid: c2957f4d831870a48af4ec016652548d, type: 3}
+  - name: 
+    item: 2
+    sprite: {fileID: 21301100, guid: c2957f4d831870a48af4ec016652548d, type: 3}
