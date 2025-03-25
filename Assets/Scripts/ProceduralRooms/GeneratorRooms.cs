@@ -62,16 +62,25 @@ public class GeneratorRooms : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            //DontDestroyOnLoad(gameObject);
         }
         else if (Instance != this)
         {
             Destroy(gameObject);
             return;
         }
+
+        EventManager.Instance.Subscribe(GameWorldEvents.OnGenerateRooms, onGenerateRoomsHandler);
+        EventManager.Instance.Subscribe(GameWorldEvents.OnUpdateRooms, NextLoop);
     }
 
-    void Start()
+    private void OnDisable()
+    {
+        EventManager.Instance.Unsubscribe(GameWorldEvents.OnGenerateRooms, onGenerateRoomsHandler);
+        EventManager.Instance.Unsubscribe(GameWorldEvents.OnUpdateRooms, NextLoop);
+    }
+
+    private void onGenerateRoomsHandler(object call)
     {
         GenerateRooms();
     }
@@ -88,10 +97,16 @@ public class GeneratorRooms : MonoBehaviour
         typeAndPosition.Add(positionCenterGrid, TypeRoom.Initial);
         SelectPoints();
     }
-
     private void ClearPreviousRooms()
     {
         points.ForEach(Destroy);
+        if (dicRoomsAndPositions.Count > 0)
+        {
+            foreach (var rooms in dicRoomsAndPositions.Values)
+            {
+                Destroy(rooms);
+            }
+        }
 
         points.Clear();
         queueRooms.Clear();
@@ -99,6 +114,13 @@ public class GeneratorRooms : MonoBehaviour
         typeAndPosition.Clear();
         dicRoomsAndPositions.Clear();
     }
+
+    private void NextLoop(object call = null)
+    {
+        maxRooms += (int)call;
+        RegenerateRooms();
+    } 
+
 
     //Clear variables and try again 
     void RegenerateRooms()
@@ -246,6 +268,8 @@ public class GeneratorRooms : MonoBehaviour
 
     private Vector2Int FindFinalRoom()
     {
+        if (roomPositions.Count == 0 || roomPositions == null) { Debug.LogError("ESTA VACIA");  return Vector2Int.zero; }
+
         Vector2Int finalPosition = roomPositions[0];
         float maxDistance = Vector2.Distance(GetPositionGrid(finalPosition), GetPositionGrid(positionCenterGrid));
 
