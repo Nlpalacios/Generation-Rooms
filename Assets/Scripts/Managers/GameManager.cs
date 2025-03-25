@@ -15,6 +15,9 @@ public class GameManager : MonoBehaviour
     [Space, Header("Rooms")]
     [SerializeField] private RoomSettings currentRoom;
 
+    [Space, Header("PRINCIPAL PROGRESS --------------")]
+    [SerializeField] private int currentLoop = 0;
+
     //Private variables
     private Camera playerCamera;
 
@@ -25,7 +28,7 @@ public class GameManager : MonoBehaviour
     public Player GetPlayer => playerReference; 
     public playerState GetCurrentState { get => gameState; set => gameState = value; }
 
-    private List<ItemsToUnlock> ItemsUnlockeds = new List<ItemsToUnlock>();
+    private List<PlayerItems> ItemsUnlockeds = new List<PlayerItems>();
 
     //InyectionDependence  || MANAGERS
     private ContainerDependences container;
@@ -34,26 +37,12 @@ public class GameManager : MonoBehaviour
     //private GeneratorRooms generatorRooms;
     private EnemyManager enemyManager;
 
-    // Change to future //
-    //Relation between the new item and its corresponding weapon
-    private Dictionary<ItemsToUnlock, PlayerWeapon> itemToWeaponMap = new Dictionary<ItemsToUnlock, PlayerWeapon>(){
-    { ItemsToUnlock.Unlock_Sword, PlayerWeapon.Weapon_Sword },
-    { ItemsToUnlock.Unlock_Hammer, PlayerWeapon.Weapon_Hammer },
-    { ItemsToUnlock.Unlock_Axe, PlayerWeapon.Weapon_Axe },
-    { ItemsToUnlock.Unlock_Boomerang, PlayerWeapon.Weapon_Boomerang }
-
-    };
-
-    // //
-
     #region Star Game
-
     private void OnEnable()
     {
         EventManager.Instance.Subscribe(GameWorldEvents.OnChangeState, SetPlayerState);
-        EventManager.Instance.Subscribe(PlayerEvents.OnUnlockItem, UnlockItem);
+        EventManager.Instance.Subscribe(GameWorldEvents.OnFinishLoop, FinishLoop);
     }
-
     void Awake()
     {
         if (Instance == null)
@@ -68,7 +57,6 @@ public class GameManager : MonoBehaviour
             return;
         }
     }
-
     private void Start()
     {
         playerCamera = Camera.main;
@@ -76,6 +64,7 @@ public class GameManager : MonoBehaviour
 
         ValidateReferences();
         SetPlayerState(playerState.Exploration);
+        EventManager.Instance.TriggerEvent(GameWorldEvents.OnGenerateRooms);
     }
 
     private void ValidateReferences()
@@ -89,11 +78,6 @@ public class GameManager : MonoBehaviour
         {
             Debug.LogError($"INVALID CAMERA IN GAME MANAGER");
         }
-    }
-
-    private void InstatiatePlayer()
-    {
-        playerReference = Instantiate(playerReference);
     }
 
     #endregion
@@ -149,7 +133,6 @@ public class GameManager : MonoBehaviour
     #endregion
 
     #region Player State
-
     public void SetPlayerState(object newState)
     {
         playerState state = (playerState)newState;
@@ -159,17 +142,19 @@ public class GameManager : MonoBehaviour
 
     #endregion
 
-
-    private void UnlockItem(object item)
+    private void FinishLoop(object loop)
     {
-        NewItem currentItem = (NewItem)item;
-        if (currentItem == null) return;
+        if (!currentRoom.IsOpenRoom) return;
 
-        ItemsUnlockeds.Add(currentItem.item);
+        currentLoop++;
 
-        if (itemToWeaponMap.TryGetValue(currentItem.item, out PlayerWeapon weapon))
+        if (playerReference == null)
         {
-            EventManager.Instance.TriggerEvent(CombatEvents.OnChangeWeapon, weapon);
+            Debug.LogError("NULL PLAYER");
+            return;
         }
+
+        playerReference.ResetPosition();
+        EventManager.Instance.TriggerEvent(GameWorldEvents.OnUpdateRooms, 1);
     }
 }
