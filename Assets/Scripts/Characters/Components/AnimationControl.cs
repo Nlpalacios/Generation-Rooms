@@ -22,12 +22,12 @@ public class AnimationControl : MonoBehaviour
 
     private void OnEnable()
     {
-        EventManager.Instance.Subscribe(PlayerEvents.OnUnlockItem, UnlockItemAnimation);
+        EventManager.Instance.Subscribe(PlayerEvents.OnChangeWeapon, UnlockItemAnimation);
     }
 
     private void OnDisable()
     {
-        EventManager.Instance.Unsubscribe(PlayerEvents.OnUnlockItem, UnlockItemAnimation);
+        EventManager.Instance.Unsubscribe(PlayerEvents.OnChangeWeapon, UnlockItemAnimation);
     }
 
     private void FixedUpdate()

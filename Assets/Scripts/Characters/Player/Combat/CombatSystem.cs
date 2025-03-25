@@ -1,14 +1,14 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Player))]
 [RequireComponent(typeof(BoxCollider2D))]
 public class CombatSystem : MonoBehaviour
 {
     [Header("Current Weapon")]
-    [SerializeField] private PlayerWeapon actualWeapon;
+    [SerializeField] private PlayerWeapon actualDistanceWeapon;
+    [SerializeField] private PlayerWeapon actualMeleeWeapon;
 
     [Header("Detection")]
     [SerializeField] private LayerMask layerEnemies;
@@ -21,35 +21,35 @@ public class CombatSystem : MonoBehaviour
 
     [Header("Weapons")]
     [SerializeField] private List<SO_WeaponProperties> weaponsComponents = new List<SO_WeaponProperties>();
-    [SerializeField] private List<WeaponDistanceID> prefabDistanceWeapons = new List<WeaponDistanceID>();
      
     [Header("Pooling")]
     [SerializeField] private Transform parentObjects;
-    [SerializeField] private int totalPool;
-    //Add for more objects in pooling
 
-    private Dictionary<TypeBullet, List<GameObject>> dicBullets = new Dictionary<TypeBullet, List<GameObject>>();
+    private Dictionary<PlayerWeapon, SO_WeaponProperties> weaponDictionary = new Dictionary<PlayerWeapon, SO_WeaponProperties>();
+    private Dictionary<PlayerWeapon, List<GameObject>> dicBullets = new Dictionary<PlayerWeapon, List<GameObject>>();
 
     //RECTANGLE
     private Vector2 TopRightcorner;
     private Vector2 BottomLefttcorner;
     private Vector2 directionAttack = Vector2.down;
 
-    //[Header("Attack")]
-    private bool isAttack = false;
-
+    //private bool isAttack = false;
     //Animations
     private Animator animator;
 
     //Attack
-    private float delay = 0f;
-
+    private float meleeDelay = 0f;
+    private float rangedDelay = 0f;
     private Player playerReference;
 
-    public PlayerWeapon ActualWeapon { get => actualWeapon; set => actualWeapon = value; }
+    public PlayerWeapon GetActualDisWeapon { get => actualDistanceWeapon; set => actualDistanceWeapon = value; }
+    public PlayerWeapon GetActualMeleeWeapon { get => actualMeleeWeapon; set => actualMeleeWeapon = value; }
 
     #region Start
-
+    private void Awake()
+    {
+        EventManager.Instance.Subscribe(PlayerEvents.OnChangeWeapon, UnlockItem);
+    }
     private void Start()
     {
         InitPooling();
@@ -57,82 +57,124 @@ public class CombatSystem : MonoBehaviour
         playerReference = GetComponent<Player>();
         animator = GetComponent<Animator>();
 
-        EventManager.Instance.Subscribe(CombatEvents.OnChangeWeapon, SetWeapon);
+        foreach (var weapon in weaponsComponents)
+        {
+            weaponDictionary[weapon.typeWeapon] = weapon;
+        }
     }
-
     private void OnDisable()
     {
         StopAllCoroutines();
+        EventManager.Instance.Unsubscribe(PlayerEvents.OnChangeWeapon, UnlockItem);
     }
-
 
     #endregion
 
     #region Pooling
     private void InitPooling()
     {
-        foreach (WeaponDistanceID weapon in prefabDistanceWeapons)
+        foreach (SO_WeaponProperties weapon in weaponsComponents)
         {
-            if (weapon == null || weapon.type == TypeBullet.None) continue;
-            dicBullets[weapon.type] = new List<GameObject>();
+            if (weapon is SO_MeleeWeapon || weapon.typeCombat != TypeCombat.Ranged) continue;
 
-            for (int i = 0; i < totalPool; i++)
+            SO_RangedWeapon dataWeapon = weapon as SO_RangedWeapon;
+            dicBullets[weapon.typeWeapon] = new List<GameObject>();
+
+            for (int i = 0; i < dataWeapon.totalBullets; i++)
             {
-                GameObject newWeapon = Instantiate(weapon.gameObject, parentObjects);
-                dicBullets[weapon.type].Add(newWeapon); 
+                GameObject newWeapon = Instantiate(dataWeapon.bulletPrefab, parentObjects);
+                dicBullets[weapon.typeWeapon].Add(newWeapon); 
                 newWeapon.SetActive(false);
             }
         }
     }
-
-    private GameObject GetBullet(TypeBullet type)
+    private GameObject GetBullet(PlayerWeapon type)
     {
-        if (!dicBullets.ContainsKey(type) || dicBullets[type] == null) return null;
+        if (!dicBullets.ContainsKey(type) || dicBullets[type] == null) { Debug.Log("NOT FIND DIC: " + type); return null; }
 
         foreach(GameObject newBullet in dicBullets[type])
         {
-            if (newBullet.activeInHierarchy) continue;
+            if (!newBullet.activeInHierarchy)
+            {
+                newBullet.SetActive(true);
+                return newBullet;
+            }
+        }
 
-            newBullet.SetActive(true);
-            return newBullet;
+        SO_RangedWeapon weaponData = weaponsComponents.Find(w => w.typeWeapon == type) as SO_RangedWeapon;
+        if (weaponData != null)
+        {
+            GameObject newWeapon = Instantiate(weaponData.bulletPrefab, parentObjects);
+            dicBullets[type].Add(newWeapon);
+            return newWeapon;
         }
 
         return null;
+    }
+    private bool isActiveBullet(PlayerWeapon type)
+    {
+        if (!dicBullets.ContainsKey(type) || dicBullets[type] == null) { Debug.Log("NOT FIND DIC: " + type); return false; }
+
+        foreach (GameObject newBullet in dicBullets[type])
+        {
+            if (newBullet.activeInHierarchy)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     #endregion
 
     #region Attack
-
-    public void CharacterAttack(InputAction.CallbackContext context)
+    public void CharacterMeleeAttack()
     {
-        if (this == null) return;
-
         //Delay
-        if (delay > Time.time) return;
-        
-        delay = Time.time + GetWeapon().delay;
+        if (meleeDelay > Time.time) return;
+        if (!TryGetWeapon(actualMeleeWeapon, out var weapon)) return;
+        SO_WeaponProperties weaponProperties = weapon;
+
+        meleeDelay = Time.time + weaponProperties.basicValues.delay;
         directionAttack = playerReference.GetDirection;
 
-        AnimationClip clip = null;
-
-        if (GetWeapon().typeWeapon == TypeCombat.Melee)
-             clip = GetAnimationClipFromDirection(ActualWeapon);
-
-        else if (GetWeapon().typeWeapon == TypeCombat.Ranged)
-            clip = GetAnimationClipFromDirection(PlayerWeapon.AnimationDistance);
+        AnimationClip clip = GetAnimationClipFromDirection(GetActualMeleeWeapon);
 
         if (!clip)
         { 
-            Debug.Log($"ANIMATION NULL: {ActualWeapon}"); 
+            Debug.Log($"ANIMATION NULL: {GetActualMeleeWeapon}"); 
+            return;
+        }
+        
+        StartCoroutine(PlayAttackAnimation(clip));
+    }
+    public void CharacterRangedAttack()
+    {
+        //Delay
+        if (rangedDelay > Time.time) return;
+        if (!TryGetWeapon(actualDistanceWeapon, out var weapon)) return;
+
+        SO_RangedWeapon rangedWeapon = weapon as SO_RangedWeapon;
+        if (rangedWeapon.isOnlyOneTrigger && isActiveBullet(actualDistanceWeapon)) return;
+
+        rangedDelay = Time.time + weapon.basicValues.delay;
+        directionAttack = playerReference.GetDirection;
+
+        AnimationClip clip = GetAnimationClipFromDirection(PlayerWeapon.AnimationDistance);
+
+        if (!clip)
+        {
+            Debug.Log($"ANIMATION NULL: {GetActualDisWeapon}");
             return;
         }
 
-        if (!isAttack)
+        //if (!isAttack)
             StartCoroutine(PlayAttackAnimation(clip));
     }
 
-    //Method for frame in animation
+
+    //Method for animation frame
     public void DetectionAttack()
     {
         UpdateRectangle();
@@ -140,18 +182,18 @@ public class CombatSystem : MonoBehaviour
 
         foreach (var collider in colliders)
         {
-            if (!collider || !isAttack) continue;
+            if (!collider) continue;
 
             if (collider.gameObject.TryGetComponent(out IHealthCharacterControl enemyHealth))
             {
-                enemyHealth.RemoveHearts(GetWeapon().damage);
+                TryGetWeapon(actualMeleeWeapon, out var weapon);
+                enemyHealth.RemoveHearts(weapon.basicValues.damage);
             }
         }
     }
-
     public void DistanceAttack()
     {
-        GameObject boomerang = GetBullet(TypeBullet.Boomerang);
+        GameObject boomerang = GetBullet(actualDistanceWeapon);
         if (boomerang == null) return;
 
         if (boomerang.TryGetComponent(out Player_Boomerang player_Boomerang))
@@ -166,35 +208,28 @@ public class CombatSystem : MonoBehaviour
 
     IEnumerator PlayAttackAnimation(AnimationClip attackAnimation)
     {
-        isAttack = true;
         animator.Play(attackAnimation.name);
-        //DetectionAttack();
-
         yield return new WaitForSeconds(attackAnimation.length);
         animator.Play("BT_Idle");
-        isAttack = false;
     }
-
     AnimationClip GetAnimationClipFromDirection(PlayerWeapon typeWeapon)
     {
-        SO_WeaponProperties Attributes = GetWeapon(typeWeapon);
+        TryGetWeapon(typeWeapon, out var Attributes);
 
         if (directionAttack.x != 0)
-            return directionAttack.x > 0 ? Attributes.attack_Right : Attributes.attack_Left;
+            return directionAttack.x > 0 ? Attributes.totalAnimations.attack_Right : Attributes.totalAnimations.attack_Left;
         
         else
-            return directionAttack.y > 0 ? Attributes.attack_Up : Attributes.attack_Down;
+            return directionAttack.y > 0 ? Attributes.totalAnimations.attack_Up : Attributes.totalAnimations.attack_Down;
         
     }
 
     #endregion
 
     #region Getters
-
-    SO_WeaponProperties GetWeapon(PlayerWeapon typeWeapon = PlayerWeapon.None)
+    private bool TryGetWeapon(PlayerWeapon weaponType, out SO_WeaponProperties weapon)
     {
-        PlayerWeapon weapon = typeWeapon == PlayerWeapon.None ? actualWeapon : typeWeapon;
-        return weaponsComponents.Find(n => n.type == weapon);
+        return weaponDictionary.TryGetValue(weaponType, out weapon);
     }
 
     #endregion
@@ -203,60 +238,29 @@ public class CombatSystem : MonoBehaviour
 
     private void UpdateRectangle()
     {
-        float distance = GetWeapon().maxScope * (directionAttack.x >= 1 ? 1 : -1);
+    //    if (!TryGetWeapon(actualMeleeWeapon, out var weapon)) return;
+    //    float distance = weapon.basicValues.maxScope * (directionAttack.x >= 1 ? 1 : -1);
 
-        /*
-        switch (directionAttack)
-        {
-            case Vector2 v when v == Vector2.down:
-                BottomLefttcorner.x = transform.position.x - distanceX_Left;
-                TopRightcorner.x = transform.position.x + distanceX_Right;
-                BottomLefttcorner.y = transform.position.y - distanceY_Down + distance;
-                TopRightcorner.y = transform.position.y + distanceY_Top;
-                break;
+    //    float xOffset = directionAttack.x * weapon.basicValues.maxScope;
+    //    float yOffset = directionAttack.y * weapon.basicValues.maxScope;
 
-            case Vector2 v when v == Vector2.up:
-                BottomLefttcorner.x = transform.position.x - distanceX_Left;
-                TopRightcorner.x = transform.position.x + distanceX_Right;
-                BottomLefttcorner.y = transform.position.y - distanceY_Down;
-                TopRightcorner.y = transform.position.y + distanceY_Top - distance;
-                break;
+    //    BottomLefttcorner = new Vector2(
+    //    transform.position.x - distanceX_Left + (directionAttack.x < 0 ? xOffset : 0),
+    //    transform.position.y - distanceY_Down + (directionAttack.y < 0 ? yOffset : 0)
+    //);
 
-            case Vector2 v when v == Vector2.right:
-                BottomLefttcorner.x = transform.position.x - distanceX_Left;
-                TopRightcorner.x = transform.position.x + distanceX_Right + distance;
-                BottomLefttcorner.y = transform.position.y - distanceY_Down;
-                TopRightcorner.y = transform.position.y + distanceY_Top;
-                break;
+    //    TopRightcorner = new Vector2(
+    //        transform.position.x + distanceX_Right + (directionAttack.x > 0 ? xOffset : 0),
+    //        transform.position.y + distanceY_Top + (directionAttack.y > 0 ? yOffset : 0)
+    //    );
 
-            case Vector2 v when v == Vector2.left:
-                BottomLefttcorner.x = transform.position.x - distanceX_Left + distance;
-                TopRightcorner.x = transform.position.x + distanceX_Right;
-                BottomLefttcorner.y = transform.position.y - distanceY_Down;
-                TopRightcorner.y = transform.position.y + distanceY_Top;
-                break;
+        if (!TryGetWeapon(actualMeleeWeapon, out var weapon)) return;
 
-            default:
-                BottomLefttcorner.x = transform.position.x - distanceX_Left;
-                TopRightcorner.x    = transform.position.x + distanceX_Right;
-                BottomLefttcorner.y = transform.position.y - distanceY_Down;
-                TopRightcorner.y    = transform.position.y + distanceY_Top;
-                break;
-        }
-        */
+        float xOffset = directionAttack.x * weapon.basicValues.maxScope;
+        float yOffset = directionAttack.y * weapon.basicValues.maxScope;
 
-        float xOffset = directionAttack.x * GetWeapon().maxScope;
-        float yOffset = directionAttack.y * GetWeapon().maxScope;
-
-        BottomLefttcorner = new Vector2(
-        transform.position.x - distanceX_Left + (directionAttack.x < 0 ? xOffset : 0),
-        transform.position.y - distanceY_Down + (directionAttack.y < 0 ? yOffset : 0)
-    );
-
-        TopRightcorner = new Vector2(
-            transform.position.x + distanceX_Right + (directionAttack.x > 0 ? xOffset : 0),
-            transform.position.y + distanceY_Top + (directionAttack.y > 0 ? yOffset : 0)
-        );
+        BottomLefttcorner = (Vector2)transform.position + new Vector2(-distanceX_Left + Mathf.Min(xOffset, 0), -distanceY_Down + Mathf.Min(yOffset, 0));
+        TopRightcorner = (Vector2)transform.position + new Vector2(distanceX_Right + Mathf.Max(xOffset, 0), distanceY_Top + Mathf.Max(yOffset, 0));
     }
 
     private void OnDrawGizmos()
@@ -279,8 +283,27 @@ public class CombatSystem : MonoBehaviour
 
     #endregion
 
-    private void SetWeapon(object call)
+    private void SetWeapon(PlayerWeapon weapon)
     {
-        actualWeapon = (PlayerWeapon)call;
+        if (!weaponDictionary.TryGetValue(weapon, out SO_WeaponProperties newWeapon))
+        {
+            Debug.LogError($"Weapon {weapon} not found in dictionary!");
+            return;
+        }
+
+        if (newWeapon.typeCombat == TypeCombat.Melee)
+        {
+            actualMeleeWeapon = weapon;
+            ItemManager.Instance.ResetCurrentWeapon(weapon);
+        }
+        else
+            actualDistanceWeapon = weapon;
+    }
+    private void UnlockItem(object item)
+    {
+        PlayerWeapon newWeapon = (PlayerWeapon)item;
+        if (newWeapon == PlayerWeapon.None) return;
+
+        SetWeapon(newWeapon);
     }
 }

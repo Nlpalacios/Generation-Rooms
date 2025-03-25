@@ -16,7 +16,8 @@ public class Player : MonoBehaviour
 
     //Input
     private InputAction IA_playerMove;
-    private InputAction IA_PlayerAttack;
+    private InputAction IA_PlayerDistanceAttack;
+    private InputAction IA_PlayerMeleeAttack;
 
     //Move player
     private bool isCanMove = true;
@@ -53,13 +54,16 @@ public class Player : MonoBehaviour
     private void OnDisable()
     {
         UnsubscribeEvents();
-        if (IA_playerMove == null || IA_PlayerAttack == null) return;
+        if (IA_playerMove == null || IA_PlayerDistanceAttack == null) return;
            
         IA_playerMove.performed -= CharacterMove;
         IA_playerMove.Disable();
 
-        IA_PlayerAttack.started += PlayerAttack;
-        IA_PlayerAttack.Disable();
+        IA_PlayerDistanceAttack.started -= PlayerAttack;
+        IA_PlayerDistanceAttack.Disable();
+
+        IA_PlayerMeleeAttack.started -= PlayerMeleeAttack;
+        IA_PlayerDistanceAttack.Disable();
     }
 
     #endregion
@@ -89,17 +93,26 @@ public class Player : MonoBehaviour
         if (!inputManager) return;
 
         IA_playerMove = inputManager.GetInputAction(InputActionsEnum.Movement);
-        IA_PlayerAttack = inputManager.GetInputAction(InputActionsEnum.Attack);
-        if (IA_PlayerAttack == null || IA_playerMove == null) return;
+
+        IA_PlayerMeleeAttack = inputManager.GetInputAction(InputActionsEnum.Attack_Melee);
+        IA_PlayerDistanceAttack = inputManager.GetInputAction(InputActionsEnum.Attack_Distance);
+
+
+        if (IA_PlayerDistanceAttack == null || IA_playerMove == null) return;
 
         // Subscribe to the performed and canceled events
         IA_playerMove.Enable();
         IA_playerMove.performed += CharacterMove;
         IA_playerMove.canceled += CharacterMove;
-
-        IA_PlayerAttack.Enable();
-        IA_PlayerAttack.started += PlayerAttack;
         isCanMove = true;
+
+        //left click
+        IA_PlayerDistanceAttack.Enable();
+        IA_PlayerDistanceAttack.started += PlayerAttack;
+
+        //right click
+        IA_PlayerMeleeAttack.Enable();
+        IA_PlayerMeleeAttack.started += PlayerMeleeAttack;
     }
 
     private void FixedUpdate()
@@ -119,6 +132,12 @@ public class Player : MonoBehaviour
     }
 
     #region Move
+
+    public void ResetPosition()
+    {
+        this.transform.position = Vector3.zero;
+    }
+
     void CharacterMove(InputAction.CallbackContext context)
     {
         vectorPlayerMove = context.ReadValue<Vector2>().normalized;
@@ -140,7 +159,13 @@ public class Player : MonoBehaviour
     void PlayerAttack(InputAction.CallbackContext context)
     {
         if (!isCanMove) return;
-        combatSystem.CharacterAttack(context);
+        combatSystem.CharacterRangedAttack();
+    }
+
+    void PlayerMeleeAttack(InputAction.CallbackContext context)
+    {
+        if (!isCanMove) return;
+        combatSystem.CharacterMeleeAttack();
     }
 
     #endregion

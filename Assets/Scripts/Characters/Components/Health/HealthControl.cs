@@ -49,6 +49,7 @@ public class HealthControl : MonoBehaviour, IHealthCharacterControl
 
     public void TakeDamage()
     {
+        if (!this.gameObject.activeInHierarchy) return;
         StartCoroutine(takeDamageAnimation());
     }
 

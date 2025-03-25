@@ -28,7 +28,7 @@ public class Player_Boomerang : MonoBehaviour
         transform.position = playerPos.transform.position;
 
         direction = GameManager.Instance.GetPlayer.GetDirection.normalized;
-        targetPoint = (Vector2)this.transform.position + direction * weaponProperties.maxScope;
+        targetPoint = (Vector2)this.transform.position + direction * weaponProperties.basicValues.maxScope;
 
         isActive = true;
     }
@@ -77,7 +77,7 @@ public class Player_Boomerang : MonoBehaviour
         if (collision.gameObject.TryGetComponent(out IHealthCharacterControl enemyHealth))
         {
             speed = Math.Min(speed + speedMultiplier, maxSpeed);
-            enemyHealth.RemoveHearts(weaponProperties.damage);
+            enemyHealth.RemoveHearts(weaponProperties.basicValues.damage);
         }
 
         if (((1 << collision.gameObject.layer) & layerCollision) != 0)

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -20,8 +21,15 @@ public class UI_Player : MonoBehaviour
     [Header("Current Level")]
     [SerializeField] private float currentExperience = 0;
 
+    [Header("Abilities")]
+    [SerializeField] private Transform abilityItemTransform;
+    [SerializeField] private AbilitySlot abilitySlotPrefab;
+
     List<GameObject> cardsPooling = new List<GameObject>();
     List<Heart_State> heart_States = new List<Heart_State>();
+
+    List<AbilitySlot> abilitySlots = new List<AbilitySlot>();
+
     public static UI_Player instance;
 
     #region Start | Events
@@ -40,26 +48,70 @@ public class UI_Player : MonoBehaviour
         EventManager.Instance.Subscribe(PlayerEvents.OnReceiveDamage, HeartManagement);
         EventManager.Instance.Subscribe(PlayerEvents.OnChangeExperience, SetExperience);
         EventManager.Instance.Subscribe(PlayerEvents.OnLevelUp, LevelUp);
-        InstantiatePlayerHearts();
-    }
 
+        EventManager.Instance.Subscribe(PlayerEvents.OnUpdateUI, UpdateAllUI);
+
+        InstantiatePlayerHearts();
+        InitSlots();
+    }
     private void OnDisable()
     {
         EventManager.Instance.Unsubscribe(PlayerEvents.OnReceiveDamage, HeartManagement);
         EventManager.Instance.Unsubscribe(PlayerEvents.OnChangeExperience, SetExperience);
         EventManager.Instance.Unsubscribe(PlayerEvents.OnLevelUp, LevelUp);
+
+        EventManager.Instance.Unsubscribe(PlayerEvents.OnUpdateUI, UpdateAllUI);
     }
 
     #endregion
+     
+    private void UpdateAllUI(object call)
+    {
+        if (PlayerStats.Instance.CurrentMaxSlotsAbilities > abilitySlots.Count)
+        {
+            var newSlots = PlayerStats.Instance.CurrentMaxSlotsAbilities - abilitySlots.Count;
+
+            for (int i = 0; i < newSlots; i++)
+            {
+                var slot = Instantiate(abilitySlotPrefab, abilityItemTransform);
+                abilitySlots.Add(slot);
+            }
+        }
+
+        if (PlayerStats.Instance.GetMaxHearts > heart_States.Count)
+        {
+            var newSlots = PlayerStats.Instance.GetMaxHearts - heart_States.Count;
+            var totalHearts = heart_States.Count;
+
+            for (int i = 0; i < newSlots; i++)
+            {
+                GameObject heart = Instantiate(heartPrefab, heartsContainer);
+
+                totalHearts++;
+                heart.name = "Heart_" + totalHearts.ToString();
+
+                if (heart.TryGetComponent(out Heart_State heart_State))
+                {
+                    heart_States.Add(heart_State);
+                }
+                else
+                {
+                    Debug.LogError("NULL HEART COMPONENT");
+                }
+            }
+        }
+
+        HeartManagement();
+    }
+
 
     #region Hearts
-
-    private void InstantiatePlayerHearts()
+    private void InstantiatePlayerHearts(object call = null)
     {
         if (PlayerStats.Instance == null) return;
 
         //if player has 10 lives, 5 hearts are instantiated
-        float totalhearts = PlayerStats.Instance.GetMaxHearts / 2;
+        float totalhearts = PlayerStats.Instance.GetMaxHearts;
 
         for (int i = 0; i < (int)totalhearts; i++)
         {
@@ -76,8 +128,7 @@ public class UI_Player : MonoBehaviour
             }
         }
     }
-
-    public void HeartManagement(object hearts)
+    public void HeartManagement(object hearts = null)
     {
         if (heart_States.Count == 0 || PlayerStats.Instance == null) return;
 
@@ -116,7 +167,6 @@ public class UI_Player : MonoBehaviour
         currentExperience += (float)exp;
         UpdateSliderExperience();
     }
-
     private void LevelUp(object level)
     {
         currentExperience = 0;
@@ -145,7 +195,6 @@ public class UI_Player : MonoBehaviour
         if (upgradeCard == null || cardsPooling.Count == 0) return;
         GameManager.Instance.SetPlayerState(playerState.Inspection);
         cardPanel.SetActive(true);
-
         int maxCards = PlayerStats.Instance.CurrentMaxCards;
 
         for (int i = 0; i < maxCards; i++)
@@ -153,12 +202,72 @@ public class UI_Player : MonoBehaviour
             if (i > cardsPooling.Count) break;
 
             CardUpgrade card = cardsPooling[i].gameObject.GetComponent<CardUpgrade>();
+            card.selectButton.onClick.AddListener(() => { CardSelected(card); });
             card.gameObject.SetActive(true);
 
-            UpgradeData data = upgradeSelectorManager.GenerateData();
-            if (data == null) { Debug.LogError("NO AVALIABLE DATA"); continue; }
+            AbilityBasicData data = upgradeSelectorManager.GenerateData();
+            if (data == null) { Debug.LogWarning("NO AVALIABLE DATA"); continue; }
             card.UpdateInfo(data);
         }
+
+        upgradeSelectorManager.ResetPreferences();
+    }
+
+    private void CardSelected(CardUpgrade card)
+    {
+        AbilityBasicData data = card.UpgradeData;
+        if (data == null) { Debug.LogWarning("NO AVALIABLE DATA"); return; }
+
+        if (data.singleUse)
+        {
+            AbilityController.Instance.StartPlayerAbility(data);
+            ResumeGame();
+            return;
+        }
+
+        AbilitySlot currentSlot = GetEmptySlot();
+        if (currentSlot == null || currentSlot.ContainData()) { Debug.LogWarning("NO AVALIABLE SLOTS"); return; }
+
+        //UNLOCK ABILITY
+        if (data.upgradeType == UpgradeType.NewAbility)
+        {
+            EventManager.Instance.TriggerEvent(CombatEvents.OnUnlockAbility, data.typeAbility);
+        }
+
+        currentSlot.ResetSlot(data);
+        ResumeGame();
+    }
+    private void ResumeGame()
+    {
+        //Continue game
+        cardPanel.SetActive(false);
+        GameManager.Instance.SetPlayerState(playerState.Exploration);
+    }
+
+    #endregion
+
+    #region Abilities
+    private void InitSlots()
+    {
+        if (PlayerStats.Instance == null) return;
+        int totalSlots = PlayerStats.Instance.CurrentMaxSlotsAbilities;
+
+        foreach (var slot in abilitySlots)
+        {
+            Destroy(slot.gameObject);
+        }
+
+        abilitySlots.Clear();
+
+        for (int i = 0;i < totalSlots; i++)
+        {
+            var slot = Instantiate(abilitySlotPrefab, abilityItemTransform);
+            abilitySlots.Add(slot);
+        }
+    }
+    private AbilitySlot GetEmptySlot()
+    {
+        return abilitySlots.FirstOrDefault(slot => !slot.ContainData());
     }
 
     #endregion

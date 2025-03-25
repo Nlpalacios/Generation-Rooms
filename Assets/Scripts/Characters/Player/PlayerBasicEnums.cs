@@ -3,7 +3,6 @@ using UnityEngine;
 
 public class PlayerBasicEnums : MonoBehaviour
 {
-    //None
 }
 
 public enum playerState: short
@@ -29,31 +28,28 @@ public enum PlayerWeapon
     AnimationDistance,
     Weapon_Boomerang,
 }
-
-[Serializable]
-public enum TypeBullet
-{
-    None,
-    Boomerang
-    //Add more
-}
-
-[Serializable]
-public enum ItemsToUnlock
-{
-    Unlock_Axe,
-    Unlock_Sword,
-    Unlock_Hammer,
-    Unlock_Boomerang,
-
-    Unlock_NewHeart
-}
-
 [Serializable]
 public enum TypeCombat
 {
     None,
     Melee,
-    Ranged,
-    Ability
+    Ranged
+}
+
+[Serializable]
+public enum PlayerItems
+{
+    None,
+
+    MiddleHeart,
+    NewHeart
+}
+
+
+[Serializable]
+public enum TypeItem
+{
+    None,
+    Weapon,
+    player
 }

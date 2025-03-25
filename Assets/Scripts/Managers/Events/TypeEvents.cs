@@ -10,23 +10,33 @@ public enum GameWorldEvents
 {
     OnChangeState,
     OnCameraShake,
-    OnChangeRoom
+    OnChangeRoom,
+
+    OnGenerateRooms,
+    OnUpdateRooms,
+
+    OnFinishLoop
 }
 
 [Serializable]
 public enum CombatEvents
 {
-    OnChangeTypeCombat,
-    OnChangeWeapon
+    OnStartPlayerAbility,
+    OnStartAbility,
+    OnUnlockAbility
 }
 
 [Serializable]
 public enum PlayerEvents
 {
-    OnUnlockItem,
+    OnChangeWeapon,
     OnStopMovement,
+
     OnReceiveDamage,
     OnDeath,
+
+    OnReceiveUpgrade,
+    OnUpdateUI,
 
     OnChangeExperience,
     OnLevelUp
