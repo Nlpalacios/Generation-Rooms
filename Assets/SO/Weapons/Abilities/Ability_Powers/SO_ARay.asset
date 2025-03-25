@@ -9,15 +9,23 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5b811cda9f909d14d9dcd98a0b9c6caf, type: 3}
-  m_Name: SO_RayAbility
+  m_Script: {fileID: 11500000, guid: 88584c0374bc5c94cb791a53e5f906ba, type: 3}
+  m_Name: SO_ARay
   m_EditorClassIdentifier: 
-  type: 1
+  abilityName: RAY
+  abilityType: 1
+  description: dasdasdasdasda
   icon: {fileID: 21300610, guid: c2957f4d831870a48af4ec016652548d, type: 3}
-  damage: 2
-  delay: 5
-  timeLoad: 0
-  range: 2
-  exp: 30
-  seconds: 0
+  singleUse: 0
+  type: 1
+  basicValues:
+    expCost: 20
+    damage: 1
+    delay: 35
+    range: 3
+  maxUpgradeValues:
+    expCost: 5
+    damage: 0
+    delay: 15
+    range: 6
   effect: {fileID: 4241111927942458704, guid: 771fc07703c92a245be53fdcf535b0c8, type: 3}

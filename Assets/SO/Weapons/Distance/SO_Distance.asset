@@ -9,15 +9,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8387757460c2a1644a54014c5424d698, type: 3}
+  m_Script: {fileID: 11500000, guid: 204e05bd5eac93a479843194c7c935ac, type: 3}
   m_Name: SO_Distance
   m_EditorClassIdentifier: 
-  type: 4
-  typeWeapon: 0
-  damage: 0
-  delay: 0
-  maxScope: 0
-  attack_Left: {fileID: 7400000, guid: 0f35da96aa2b2664aae7a1a80fcc8b32, type: 2}
-  attack_Right: {fileID: 7400000, guid: d18c3cc7c0e8cd846ae7b18d91383f63, type: 2}
-  attack_Up: {fileID: 7400000, guid: b8d002da0ba95c742968287b670eadc7, type: 2}
-  attack_Down: {fileID: 7400000, guid: ffad09268bb3e52409ac6bea3e530837, type: 2}
+  typeWeapon: 4
+  typeCombat: 0
+  basicValues:
+    damage: 0
+    delay: 0
+    maxScope: 0
+  totalAnimations:
+    attack_Left: {fileID: 7400000, guid: 0f35da96aa2b2664aae7a1a80fcc8b32, type: 2}
+    attack_Right: {fileID: 7400000, guid: d18c3cc7c0e8cd846ae7b18d91383f63, type: 2}
+    attack_Up: {fileID: 7400000, guid: b8d002da0ba95c742968287b670eadc7, type: 2}
+    attack_Down: {fileID: 7400000, guid: ffad09268bb3e52409ac6bea3e530837, type: 2}
+  bulletPrefab: {fileID: 0}
+  totalBullets: 10
+  isOnlyOneTrigger: 0

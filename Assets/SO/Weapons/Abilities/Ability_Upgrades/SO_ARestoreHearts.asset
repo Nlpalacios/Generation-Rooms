@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35188a5db4044c64399c60676b917236, type: 3}
+  m_Name: SO_ARestoreHearts
+  m_EditorClassIdentifier: 
+  abilityName: Restore Hearts
+  abilityType: 0
+  description: Restore all HEARTS
+  icon: {fileID: 21300592, guid: c2957f4d831870a48af4ec016652548d, type: 3}
+  singleUse: 1
+  type: 2
+  upgradeValue: 10000
+  basicValues:
+    expCost: 0
+    damage: 0
+    delay: 0
+    range: 0
+  isSpecialCase: 1
+  restoreHearts: 1

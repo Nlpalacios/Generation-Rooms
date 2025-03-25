@@ -9,15 +9,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8387757460c2a1644a54014c5424d698, type: 3}
+  m_Script: {fileID: 11500000, guid: 204e05bd5eac93a479843194c7c935ac, type: 3}
   m_Name: SO_Boomerang
   m_EditorClassIdentifier: 
-  type: 5
-  typeWeapon: 2
-  damage: 2
-  delay: 3
-  maxScope: 7
-  attack_Left: {fileID: 0}
-  attack_Right: {fileID: 0}
-  attack_Up: {fileID: 0}
-  attack_Down: {fileID: 0}
+  typeWeapon: 5
+  typeCombat: 2
+  basicValues:
+    damage: 1
+    delay: 0
+    maxScope: 20
+  totalAnimations:
+    attack_Left: {fileID: 0}
+    attack_Right: {fileID: 0}
+    attack_Up: {fileID: 0}
+    attack_Down: {fileID: 0}
+  bulletPrefab: {fileID: 3055749893602348998, guid: fed5caa41c860ab40bd653591a844460, type: 3}
+  totalBullets: 10
+  isOnlyOneTrigger: 1

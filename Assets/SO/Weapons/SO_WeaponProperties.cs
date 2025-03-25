@@ -1,23 +1,33 @@
+using System;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "SO_WeaponManager", menuName = "Scriptable Objects/SO_WeaponManager")]
-public class SO_WeaponProperties : ScriptableObject
+public abstract class SO_WeaponProperties : ScriptableObject
 {
-    [Header("Type")]
-    public PlayerWeapon type;
-    public TypeCombat typeWeapon;
+    [Header("Properties")]
+    public PlayerWeapon typeWeapon;
+    public TypeCombat typeCombat;
 
-    [Header("Icon")]
-    public Sprite icon;
-
-    [Header("Value")]
-    public int damage;
-    public float delay;
-    public float maxScope;
+    [Header("Values")]
+    public Values basicValues;
 
     [Header("Animations")]
-    public AnimationClip attack_Left;
-    public AnimationClip attack_Right;
-    public AnimationClip attack_Up;
-    public AnimationClip attack_Down;
+    public Animations totalAnimations;
+
+    [Serializable]
+    public class Animations
+    {
+        public AnimationClip attack_Left;
+        public AnimationClip attack_Right;
+        [Space]
+        public AnimationClip attack_Up;
+        public AnimationClip attack_Down;
+    }
+
+    [Serializable]
+    public class Values
+    {
+        public int damage;
+        public float delay;
+        public float maxScope;
+    }
 }
