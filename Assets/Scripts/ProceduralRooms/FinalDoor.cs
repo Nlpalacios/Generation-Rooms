@@ -2,22 +2,20 @@ using UnityEngine;
 
 public class FinalDoor : MonoBehaviour
 {
-    private RoomSettings room;
+    [SerializeField] private Animator animator;
+    bool isCurrentOpen = false;
 
-    private void OnEnable()
+    public void OpenDoor(bool isOpen)
     {
-        room = GetComponentInParent<RoomSettings>();
-        if (room == null)
-        {
-            Debug.LogWarning("NO FIND ROOM PARENT");
-        }
+        animator.SetBool("OpenDoor", isOpen);
+        isCurrentOpen = isOpen;
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision == null || room == null) return;
+        if (collision == null) return;
 
-        if (collision.tag == "Player" && room.IsOpenRoom)
+        if (collision.tag == "Player" && isCurrentOpen)
         {
             EventManager.Instance.TriggerEvent(GameWorldEvents.OnFinishLoop);
         }
