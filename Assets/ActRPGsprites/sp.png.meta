@@ -14874,7 +14874,7 @@ TextureImporter:
         serializedVersion: 2
         x: 480
         y: 16
-        width: 64
+        width: 32
         height: 48
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
@@ -15150,6 +15150,28 @@ TextureImporter:
       bones: []
       spriteID: 0d705410000000000800000000000000
       internalID: 21301200
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_601
+      rect:
+        serializedVersion: 2
+        x: 512
+        y: 16
+        width: 32
+        height: 48
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0e2ecb77019cdb948bc84880dffced93
+      internalID: -1404841323
       vertices: []
       indices: 
       edges: []
@@ -15725,6 +15747,7 @@ TextureImporter:
       sp_6: 21300012
       sp_60: 21300120
       sp_600: 21301200
+      sp_601: -1404841323
       sp_61: 21300122
       sp_62: 21300124
       sp_63: 21300126
