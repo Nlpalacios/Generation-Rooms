@@ -297,7 +297,10 @@ public class CombatSystem : MonoBehaviour
             ItemManager.Instance.ResetCurrentWeapon(weapon);
         }
         else
+        {
             actualDistanceWeapon = weapon;
+            ItemManager.Instance.hasBoomerang = true;
+        }
     }
     private void UnlockItem(object item)
     {

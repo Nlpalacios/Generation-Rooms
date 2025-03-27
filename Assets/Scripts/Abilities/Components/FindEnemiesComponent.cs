@@ -13,7 +13,7 @@ public class FindEnemiesComponent : Component
                 continue;
             }
 
-            IAbilityPrefab NewPrefab = MonoBehaviour.Instantiate(prefab).GetComponent<IAbilityPrefab>();
+            IAbilityPrefab NewPrefab = Instantiate(prefab).GetComponent<IAbilityPrefab>();
             if (NewPrefab == null)
             {
                 Debug.LogWarning("No Interface available for ability instantiation.");

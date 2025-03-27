@@ -25,5 +25,5 @@ public enum typeEnemy: short
 {
     Slime     = 1,
     Wasp      = 2,
-    Knight    = 3
+    Snake     = 3
 }

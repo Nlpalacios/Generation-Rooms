@@ -63,7 +63,6 @@ public abstract class EnemyBasicStates : MonoBehaviour
             Debug.LogError("NO FIND BASIC COMPONENTS IN: " + this.gameObject.name);
         }
     }
-
     private void InitVariables()
     {
         if (currentHealt == null || NMA_agent == null || enemyAnim == null)
@@ -83,7 +82,6 @@ public abstract class EnemyBasicStates : MonoBehaviour
 
         ResetNavMeshValues();
     }
-
     public void InitEnemy()
     {
         ResetEnemy();
@@ -109,9 +107,7 @@ public abstract class EnemyBasicStates : MonoBehaviour
         EnemyManager.Instance.UpdateEnemyState(this.gameObject, false);
         EventManager.Instance.TriggerEvent(PlayerEvents.OnChangeExperience, basicParameters.totalExperience);
     }
-
     public abstract void OnHealthChanged(int damage);
-
     public void AttackPlayer()
     {
         EventManager.Instance.TriggerEvent(PlayerEvents.OnReceiveDamage, basicParameters.damage);
@@ -203,22 +199,18 @@ public abstract class EnemyBasicStates : MonoBehaviour
         NMA_agent.speed = basicParameters.speed;
         NMA_agent.stoppingDistance = basicParameters.attackRange;
     }
-
     public bool isActivateNavMesh()
     {
         return NMA_agent.isActiveAndEnabled;
     }
-
     public void switchNavMesh()
     {
         NMA_agent.enabled =! NMA_agent.enabled;
     }
-
     public void DesactivateNavMesh()
     {
         NMA_agent.enabled = false;
     }
-
     public void ActivateNavMesh()
     {
         NMA_agent.enabled = true;
@@ -226,7 +218,7 @@ public abstract class EnemyBasicStates : MonoBehaviour
 
     #endregion
 
-    public void ChaseBasicPlayer(Action OnEnterRange)
+    public void BasicChasePlayer(Action OnEnterRange)
     {
         if (!NMA_agent.isActiveAndEnabled || !isCanMove) return;
 
@@ -238,7 +230,6 @@ public abstract class EnemyBasicStates : MonoBehaviour
             OnEnterRange?.Invoke();
         }
     }
-
     public void Flip()
     {
         bool shouldFlip = (facingRight && transform.position.x < playerPosition.x) ||

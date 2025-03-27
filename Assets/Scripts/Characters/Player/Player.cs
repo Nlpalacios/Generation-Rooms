@@ -135,14 +135,12 @@ public class Player : MonoBehaviour
 
     public void ResetPosition()
     {
-        this.transform.position = Vector3.zero;
+        this.transform.position = new Vector3(0,-3,0);
     }
-
     void CharacterMove(InputAction.CallbackContext context)
     {
         vectorPlayerMove = context.ReadValue<Vector2>().normalized;
     }
-
     void StopMovement(object newMovement)
     {
         bool shouldStop = (bool)newMovement;

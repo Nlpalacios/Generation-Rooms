@@ -11,7 +11,7 @@ public class ChaseState : IEnemyState
     {
         enemy.Chase();
 
-        enemy.ChaseBasicPlayer(() =>
+        enemy.BasicChasePlayer(() =>
         {
             if (enemy.canAttack && enemy.haveAttackState) 
                 enemy.SwitchToState(EnemyStates.Attack);

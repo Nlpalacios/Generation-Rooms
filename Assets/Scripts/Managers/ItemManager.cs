@@ -14,6 +14,7 @@ public class ItemManager : MonoBehaviour
     private List<NewItem> activeItems = new List<NewItem>();
     private static PlayerWeapon[] validItems;
     public static ItemManager Instance;
+    public bool hasBoomerang = false;
 
     private void Awake()
     {
@@ -29,12 +30,8 @@ public class ItemManager : MonoBehaviour
     }
     private void OnReset(object call)
     {
-        foreach (var item in activeItems)
-        {
-            if (item != null) Destroy(item);
-        }
+        activeItems.ForEach(item => Destroy(item.gameObject));
         activeItems.Clear();
-
         currentWeapon = PlayerWeapon.None;
     }
     private void ResetTotalWeapons()
