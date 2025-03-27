@@ -1,7 +1,8 @@
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
+using static RoomSettings;
+using Random = UnityEngine.Random;
 
 public class EnemyManager : MonoBehaviour
 {
@@ -16,7 +17,8 @@ public class EnemyManager : MonoBehaviour
     private Dictionary<typeEnemy, List<GameObject>> enemyPools = new Dictionary<typeEnemy, List<GameObject>>();
 
     private HashSet<GameObject> activeEnemies = new HashSet<GameObject>();
-    private HashSet<GameObject> enemiesSelected = new HashSet<GameObject>();
+    private HashSet<GameObject> enemiesAbilitySelected = new HashSet<GameObject>();
+    private HashSet<GameObject> enemiesRoomsSelected = new HashSet<GameObject>();
 
     //Singleton
     public static EnemyManager Instance { get; private set; }
@@ -34,21 +36,10 @@ public class EnemyManager : MonoBehaviour
             return;
         }
     }
-
     void Start()
     {
         //LoadEnemiesPrefab();
         InitObjectPool();
-    }
-
-    private void Update()
-    {
-        //Delete
-        if (Input.GetKeyDown(KeyCode.E))
-        {
-            InstantiateEnemy(new Vector3(0, 0, 0), typeEnemy.Slime);
-            InstantiateEnemy(new Vector3(0, 0, 0), typeEnemy.Wasp);
-        }
     }
 
     #region Object pool
@@ -69,17 +60,13 @@ public class EnemyManager : MonoBehaviour
             paths.Add(path);
         }
     }
-
     private void InitObjectPool()
     {
         foreach (var enemyObject in enemiesProperties) 
         {
             EnemyBasicStates enemyStates = enemyObject.GetComponent<EnemyBasicStates>();
-            if (enemyStates == null)
-            {
-                continue;
-            }
-
+            if (enemyStates == null) continue;
+            
             keyEnemyType.Add(enemyStates.parameters.enemyType, enemyObject);
             enemyPools[enemyStates.parameters.enemyType] = new List<GameObject>();
 
@@ -93,7 +80,35 @@ public class EnemyManager : MonoBehaviour
         }
     }
 
-    public GameObject InstantiateEnemy(Vector3 posStartEnemy, typeEnemy type)
+    public List<GameObject> InstantiateEnemies(int totalEnemies, Vector2 spawnArea, Vector2 roomPos, List<EnemyPercent> enemyPercent, bool spawnEnable = false)
+    {
+        if (enemyPercent.Count <= 0 || totalEnemies <= 0) return null;
+        List<GameObject> enemies = new List<GameObject>();
+        int remainingEnemies = totalEnemies;
+        foreach (var enemy in enemyPercent)
+        {
+            if (enemy.maxPercent <= 0) continue;
+            int total = Mathf.Min((int)((totalEnemies * enemy.maxPercent) / 100), remainingEnemies);
+            remainingEnemies -= total;
+
+            for (int i = 0; i < total; i++)
+            {
+                float x = Random.Range(roomPos.x - spawnArea.x / 2, roomPos.x + spawnArea.x / 2);
+                float y = Random.Range(roomPos.y - spawnArea.y / 2, roomPos.y + spawnArea.y / 2);
+                Vector3 finalPos = new Vector3(x, y, 0);
+
+                GameObject newEnemy = InstantiateEnemy(finalPos, enemy.type, spawnEnable, true);
+                if (newEnemy != null)
+                {
+                    enemies.Add(newEnemy);
+                    enemiesRoomsSelected.Add(newEnemy);
+                }
+            }
+        }
+
+        return enemies;
+    }
+    public GameObject InstantiateEnemy(Vector3 posStartEnemy, typeEnemy type, bool spawnEnable = true, bool selectedRooms = false)
     {
         if (!enemyPools.ContainsKey(type))
         {
@@ -102,31 +117,46 @@ public class EnemyManager : MonoBehaviour
         }
 
         List<GameObject> pool = enemyPools[type];
+
         foreach (var enemy in pool)
         {
-            if (!enemy.activeInHierarchy)
+            if (selectedRooms)
             {
-                EnemyBasicStates enemyScript = enemy.GetComponent<EnemyBasicStates>();
-                if (enemyScript == null) return null;
+                if (!enemy.activeInHierarchy && !enemiesRoomsSelected.Contains(enemy))
+                {
+                    return ActivateEnemy(enemy, posStartEnemy, spawnEnable);
+                }
+            }
 
-                enemyScript.InitEnemy();
-                enemy.SetActive(true);
-
-                Vector3 posInit = new Vector3(posStartEnemy.x, posStartEnemy.y, 0);
-                enemy.transform.localPosition = posInit;
-                enemy.transform.rotation = new Quaternion(0, 0, 0, 0);
-
-                EventManager.Instance.TriggerEvent(EnemiesEvents.OnEnableEnemy);
-                UpdateEnemyState(enemy, true);
-                return enemy;
+            else if (!enemy.activeInHierarchy)
+            {
+                return ActivateEnemy(enemy, posStartEnemy, spawnEnable);
             }
         }
 
-        return null;
+        GameObject newEnemy = Instantiate(keyEnemyType[type], objectPool.transform);
+        enemyPools[type].Add(newEnemy); 
+
+        return ActivateEnemy(newEnemy, posStartEnemy, spawnEnable);
+    }
+    private GameObject ActivateEnemy(GameObject enemy, Vector3 position, bool spawnEnable)
+    {
+        EnemyBasicStates enemyScript = enemy.GetComponent<EnemyBasicStates>();
+        if (enemyScript == null) return null;
+
+        enemyScript.InitEnemy();
+        enemy.SetActive(spawnEnable);
+
+        Vector3 posInit = new Vector3(position.x, position.y, 0);
+        enemy.transform.localPosition = posInit;
+        enemy.transform.rotation = Quaternion.identity;
+
+        EventManager.Instance.TriggerEvent(EnemiesEvents.OnEnableEnemy);
+        UpdateEnemyState(enemy, true);
+        return enemy;
     }
 
     #endregion
-
     public void UpdateEnemyState(GameObject enemy, bool isActive)
     {
         if (isActive)
@@ -136,7 +166,7 @@ public class EnemyManager : MonoBehaviour
         else
         {
             activeEnemies.Remove(enemy);
-            enemiesSelected.Remove(enemy);
+            enemiesAbilitySelected.Remove(enemy);
         }
     }
 
@@ -144,32 +174,22 @@ public class EnemyManager : MonoBehaviour
     {
         return activeEnemies.Count;
     }
-    public GameObject GetFirstActiveEnemy()
-    {
-        foreach (var enemy in activeEnemies)
-        {
-            return enemy;
-        }
-
-        return null;
-    }
     public GameObject GetDiferentActiveEnemy()
     {
         foreach (var enemy in activeEnemies)
         {
-            if (!enemiesSelected.Contains(enemy))
+            if (!enemiesAbilitySelected.Contains(enemy))
             {
-                enemiesSelected.Add(enemy);
+                enemiesAbilitySelected.Add(enemy);
                 return enemy;
             }
         }
 
         return null;
     }
-
     public void ResetEnemiesSelected()
     {
-        enemiesSelected.Clear();
+        enemiesAbilitySelected.Clear();
     }
 
 }
