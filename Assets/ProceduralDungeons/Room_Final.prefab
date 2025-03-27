@@ -1353,6 +1353,12 @@ MonoBehaviour:
   RightDoor: {fileID: 64697494672956623}
   DownDoor: {fileID: 1292494835121253721}
   UpDoor: {fileID: 5717433595229605330}
+  maxInitialEnemies: 4
+  enemyPercents:
+  - type: 1
+    maxPercent: 50
+  - type: 2
+    maxPercent: 50
   sizeBox: {x: 20, y: 11}
   playerLayer:
     serializedVersion: 2
@@ -1362,8 +1368,8 @@ MonoBehaviour:
     m_Bits: 128
   blockedColor: {r: 0.24313726, g: 0.24313726, b: 0.24313726, a: 1}
   isOpenRoom: 1
-  finalDoor: {fileID: 4080258298076320673, guid: 2cda26b290d4b00448781f8480b65cae, type: 3}
-  scaleDoor: {x: 0.08, y: 0.12, z: 0}
+  prefabDoor: {fileID: 4080258298076320673, guid: 2cda26b290d4b00448781f8480b65cae, type: 3}
+  scaleDoor: {x: 0.05, y: 0.084, z: 0}
 --- !u!1 &5717433595229605330
 GameObject:
   m_ObjectHideFlags: 0

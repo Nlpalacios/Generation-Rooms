@@ -1748,11 +1748,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 220541577301127607, guid: 15ad28a15865934418642d450c598e71, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.36
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 220541577301127607, guid: 15ad28a15865934418642d450c598e71, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -3.74
+      value: -3
       objectReference: {fileID: 0}
     - target: {fileID: 220541577301127607, guid: 15ad28a15865934418642d450c598e71, type: 3}
       propertyPath: m_LocalPosition.z
@@ -1800,7 +1800,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1202406096237215737, guid: 15ad28a15865934418642d450c598e71, type: 3}
       propertyPath: currentMaxCards
-      value: 4
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1202406096237215737, guid: 15ad28a15865934418642d450c598e71, type: 3}
+      propertyPath: maxSlotsAbilities
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 1202406096237215737, guid: 15ad28a15865934418642d450c598e71, type: 3}
       propertyPath: currentMaxAbilities
@@ -2222,6 +2226,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   itemPrefab: {fileID: 456898885896782812, guid: c49cfff412de78f4f9e8b38b63241247, type: 3}
+  hasBoomerang: 0
 --- !u!4 &1738042511
 Transform:
   m_ObjectHideFlags: 0
@@ -2348,7 +2353,7 @@ MonoBehaviour:
   playerReference: {fileID: 1032815170}
   gameState: 0
   currentRoom: {fileID: 0}
-  currentLoop: 0
+  currentLoop: 1
 --- !u!4 &1776454158
 Transform:
   m_ObjectHideFlags: 0
@@ -2395,7 +2400,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   objectPool: {fileID: 1884684899}
-  countEnemies: 5
+  countEnemies: 20
   pathEnemies: Assets/Prefabs/Enemies
   enemiesProperties:
   - {fileID: 2310293093283513670, guid: f297a009334e1b24da6c89772cd96364, type: 3}

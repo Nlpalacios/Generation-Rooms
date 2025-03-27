@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,6 +9,17 @@ public abstract class RoomSettings : MonoBehaviour
     [SerializeField] private GameObject RightDoor;
     [SerializeField] private GameObject DownDoor;
     [SerializeField] private GameObject UpDoor;
+
+    [Header("Enemies")]
+    [SerializeField] private int maxInitialEnemies = 0;
+    [SerializeField] private List<EnemyPercent> enemyPercents;
+
+    [Serializable]
+    public class EnemyPercent
+    {
+        public typeEnemy type;
+        public float maxPercent;
+    }
 
     [Space, Header("Player Detection")]
     [SerializeField] private Vector2 sizeBox = new Vector2(20,11);
@@ -20,21 +32,32 @@ public abstract class RoomSettings : MonoBehaviour
 
     private List<GameObject> doors = new List<GameObject>();
     private List<GameObject> openDoors = new List<GameObject>();
-    [SerializeField] private bool isOpenRoom = true;
+    private List<GameObject> enemies = new List<GameObject>();
 
+    [SerializeField] private bool isOpenRoom = true;
+    bool playerEnter = false;
 
     public Vector2 GetArea { get => sizeBox; }
     public bool IsOpenRoom { get => isOpenRoom; set => isOpenRoom = value; }
+
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        float total = 0;
+        enemyPercents.ForEach(enemy => total += enemy.maxPercent);
+        if (total > 100)
+        {
+            Debug.LogWarning("MUST BE 100");
+        }
+    }
+
+#endif
 
     private void Awake()
     {
         EventManager.Instance.Subscribe(EnemiesEvents.OnEnableEnemy, StartEnemyDetector);
     }
-    private void OnDisable()
-    {
-        EventManager.Instance.Unsubscribe(EnemiesEvents.OnEnableEnemy, StartEnemyDetector);
-    }
-
     private void Start()
     {
         InvokeRepeating(nameof(PlayerDetection), 1f, 0.2f);
@@ -44,30 +67,40 @@ public abstract class RoomSettings : MonoBehaviour
         doors.Add(DownDoor);
         doors.Add(UpDoor);
     }
+
+
+    private void OnDisable()
+    {
+        EventManager.Instance.Unsubscribe(EnemiesEvents.OnEnableEnemy, StartEnemyDetector);
+    }
     private void Update()
     {
         NewUpdate();
     }
 
     public abstract void NewUpdate();
+    public abstract void OnPlayerEnter();
+    public abstract void OnCloseDoor();
+    public abstract void OnOpenDoor();
+
+
 
     //DETECTION ------------------------------
     void PlayerDetection()
     {
         Collider2D player = Physics2D.OverlapBox(transform.position, GetArea, 0f, playerLayer);
-        if (player == null) return;
+        if (player == null) 
+        { 
+            if (playerEnter) playerEnter = false;
+            return;
+        }
 
         //Debug
         Debug.DrawLine(transform.position, player.transform.position, Color.red);
         GameManager.Instance.TrySaveActualRoom(this);
-    }
 
-    public void StartEnemyDetector(object call)
-    {
-        if (IsInvoking(nameof(EnemyDetector))) return;
-        InvokeRepeating(nameof(EnemyDetector), .1f, 2);
+        if (!playerEnter){ OnPlayerEnter(); playerEnter = true; }
     }
-
     void EnemyDetector()
     {
         Collider2D[] enemies = Physics2D.OverlapBoxAll(transform.position, GetArea, 0f, enemyLayer);
@@ -91,7 +124,34 @@ public abstract class RoomSettings : MonoBehaviour
         }
     }
 
+    public void InstantiateAllEnemies()
+    {
+        if (maxInitialEnemies <= 0) return;
+        enemies = EnemyManager.Instance.InstantiateEnemies(maxInitialEnemies, GetArea, (Vector2)transform.position, enemyPercents);
+    }
+    public void ActiveEnemies()
+    {
+        if (enemies == null || enemies.Count <= 0) return;
+
+        foreach (var enemy in enemies)
+        {
+            if (enemy != null)
+            {
+                enemy.gameObject.SetActive(true);
+                StartEnemyDetector();
+            }
+        }
+
+        enemies.Clear();
+    }
+    public void StartEnemyDetector(object call = null)
+    {
+        if (IsInvoking(nameof(EnemyDetector))) return;
+        InvokeRepeating(nameof(EnemyDetector), .1f, 2);
+    }
+
     //DOOR MANAGMENT ------------------------
+    #region Door Management  
     public void RemoveDoor(directionDoor door)
     {
         switch (door)
@@ -117,9 +177,10 @@ public abstract class RoomSettings : MonoBehaviour
                 break;
         }
     }
-
     public void CloseRoom()
     {
+        OnCloseDoor();
+
         foreach (GameObject actualDoor in doors)
         {
             if (actualDoor.activeInHierarchy) continue;
@@ -134,11 +195,12 @@ public abstract class RoomSettings : MonoBehaviour
 
             openDoors.Add(actualDoor);
         }
+
     }
 
     public void OpenRoom()
     {
-        if (openDoors.Count <= 0) return;
+        OnOpenDoor();
 
         foreach (GameObject actualDoor in openDoors)
         {
@@ -153,14 +215,18 @@ public abstract class RoomSettings : MonoBehaviour
         openDoors.Clear();
     }
 
+    #endregion
+
+
     //GIZMOS --------------------------------
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireCube(transform.position, GetArea);
     }
+
     //Max 5
-    public void SpawnItem(byte numItems, PlayerWeapon[] types)
+    public void SpawnItem(byte numItems, PlayerWeapon[] types = null)
     {
         if (numItems <= 0) return;
 
@@ -173,8 +239,13 @@ public abstract class RoomSettings : MonoBehaviour
         {
             Vector3 pos = new Vector3(startX + (i * spacing), y);
             Vector3 finalPos = pos + transform.position;
+            PlayerWeapon weapon = PlayerWeapon.None;
 
-            PlayerWeapon weapon = (i < types.Length) ? types[i] : PlayerWeapon.None;
+            if (types != null)
+            {
+                weapon = (i < types.Length) ? types[i] : PlayerWeapon.None;
+            }
+
             ItemManager.Instance.SpawnNewMeleeWeapon(finalPos, weapon);
         }
     }

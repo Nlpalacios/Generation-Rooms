@@ -1353,6 +1353,12 @@ MonoBehaviour:
   RightDoor: {fileID: 64697494672956623}
   DownDoor: {fileID: 1292494835121253721}
   UpDoor: {fileID: 5717433595229605330}
+  maxInitialEnemies: 10
+  enemyPercents:
+  - type: 1
+    maxPercent: 40
+  - type: 2
+    maxPercent: 60
   sizeBox: {x: 20, y: 11}
   playerLayer:
     serializedVersion: 2
