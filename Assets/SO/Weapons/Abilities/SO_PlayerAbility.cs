@@ -3,6 +3,8 @@
 [CreateAssetMenu(fileName = "New Player Ability", menuName = "Abilities/PLAYER Ability")]
 public class SO_PlayerAbility : AbilityBaseData
 {
+    public int totalUses = 0;
+
     [Space]
     [Header("Type - Ability")]
     public PlayerBasicStats type;

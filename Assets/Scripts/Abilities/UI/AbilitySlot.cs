@@ -1,3 +1,4 @@
+using UnityEditor.Overlays;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,13 +18,14 @@ public class AbilitySlot : MonoBehaviour
 
         if (upgradeData != null)
         {
-            icon.sprite = upgradeData.icon;
+            icon.sprite = upgradeData.GetBasicData().icon;
         }
     }
 
     public void OnSelect()
     {
         if (upgradeData == null || upgradeData.upgradeType == UpgradeType.None) { Debug.Log("NULL DATA"); return; }
+        if (!PlayerStats.Instance.UseAbility(GetExp())){ Debug.LogWarning("NO EXP FOR USE"); return; }
 
         if (upgradeData.upgradeType == UpgradeType.playerUpgrade)
         {
@@ -33,5 +35,24 @@ public class AbilitySlot : MonoBehaviour
         {
             EventManager.Instance.TriggerEvent(CombatEvents.OnStartAbility, upgradeData);
         }
+    }
+
+    int GetExp()
+    {
+        AbilityBaseData data = upgradeData.GetBasicData();
+
+        if (data is SO_NewAbility)
+        {
+            SO_NewAbility abilityData = (SO_NewAbility)data;
+            return abilityData.basicValues.expCost;
+        }
+        else if (data is SO_PlayerAbility)
+        {
+            SO_PlayerAbility playerData = (SO_PlayerAbility)data;
+            return playerData.basicValues.expCost;
+        }
+
+        Debug.LogWarning("NO DATA");
+        return 0;
     }
 }

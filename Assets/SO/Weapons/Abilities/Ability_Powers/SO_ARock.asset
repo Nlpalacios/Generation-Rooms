@@ -16,7 +16,7 @@ MonoBehaviour:
   abilityType: 1
   description: dasda
   icon: {fileID: 21300606, guid: c2957f4d831870a48af4ec016652548d, type: 3}
-  singleUse: 0
+  automaticUse: 0
   type: 2
   basicValues:
     expCost: 35

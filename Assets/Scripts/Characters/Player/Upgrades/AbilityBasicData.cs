@@ -1,24 +1,58 @@
 using UnityEngine;
 
 public class AbilityBasicData
-{ 
+{
+    //data
+    public SO_PlayerAbility playerAbilityData;
+    public SO_NewAbility newAbilityData;
+    public UpgradeData upgradeData;
+
+    //type data
     public UpgradeType upgradeType;
 
-    public string name;
-    public string description;
+    //Uses
+    public int totalUses = 0;
 
-    public NameAbility typeAbility;
-    public AbilityValues abilityValues;
+    public AbilityBasicData(AbilityBaseData baseData, UpgradeType type)
+    {
+        if (baseData == null) { Debug.LogWarning("NULL DATA"); return; }
 
-    public PlayerBasicStats playerUpgrades;
-    public AbilityUpgrades abilityUpgrades;
+        if (baseData is SO_NewAbility)
+        {
+            newAbilityData = (SO_NewAbility)baseData;
+        }
+        else if (baseData is SO_PlayerAbility)
+        {
+            playerAbilityData = (SO_PlayerAbility)baseData;
+            totalUses = playerAbilityData.totalUses;
+        }
+        else if (baseData is UpgradeData)
+        {
+            upgradeData = (UpgradeData)baseData;
+        }
 
-    public Sprite icon;
-    public float valueUpgrade = 0;
+        upgradeType = type;
+    }
 
-    //Hearts
-    public bool restoreHearts = false;
-    public bool singleUse = false;
+    public AbilityBaseData GetBasicData()
+    {
+        if (playerAbilityData == null && newAbilityData == null)
+        {
+            Debug.LogError("ALL DATA NULL");
+            return null;
+        }
+
+        return playerAbilityData != null ? playerAbilityData
+                                         : newAbilityData;
+    }
+    public bool canUseAbility() => totalUses > 0;
+    public void UseAbility()
+    {
+        if (canUseAbility())
+        {
+            totalUses--;
+        }
+    }
 }
 
 public enum UpgradeType
@@ -35,8 +69,6 @@ public enum AbilityType
     NewAbility,
     AbilityUpgrade,
 }
-
-
 
 public enum PlayerBasicStats
 {

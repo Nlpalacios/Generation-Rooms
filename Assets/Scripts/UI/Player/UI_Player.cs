@@ -18,9 +18,6 @@ public class UI_Player : MonoBehaviour
     [SerializeField] private Transform cardContainer;
     [SerializeField] private GameObject cardPanel;
 
-    [Header("Current Level")]
-    [SerializeField] private float currentExperience = 0;
-
     [Header("Abilities")]
     [SerializeField] private Transform abilityItemTransform;
     [SerializeField] private AbilitySlot abilitySlotPrefab;
@@ -31,6 +28,7 @@ public class UI_Player : MonoBehaviour
     List<AbilitySlot> abilitySlots = new List<AbilitySlot>();
 
     public static UI_Player instance;
+    private static PlayerStats stats;
 
     #region Start | Events
 
@@ -46,20 +44,20 @@ public class UI_Player : MonoBehaviour
     private void OnEnable()
     {
         EventManager.Instance.Subscribe(PlayerEvents.OnReceiveDamage, HeartManagement);
-        EventManager.Instance.Subscribe(PlayerEvents.OnChangeExperience, SetExperience);
-        EventManager.Instance.Subscribe(PlayerEvents.OnLevelUp, LevelUp);
 
+        EventManager.Instance.Subscribe(PlayerEvents.OnLevelUp, LevelUp);
         EventManager.Instance.Subscribe(PlayerEvents.OnUpdateUI, UpdateAllUI);
 
+
+        stats = PlayerStats.Instance;
         InstantiatePlayerHearts();
         InitSlots();
     }
     private void OnDisable()
     {
         EventManager.Instance.Unsubscribe(PlayerEvents.OnReceiveDamage, HeartManagement);
-        EventManager.Instance.Unsubscribe(PlayerEvents.OnChangeExperience, SetExperience);
-        EventManager.Instance.Unsubscribe(PlayerEvents.OnLevelUp, LevelUp);
 
+        EventManager.Instance.Unsubscribe(PlayerEvents.OnLevelUp, LevelUp);
         EventManager.Instance.Unsubscribe(PlayerEvents.OnUpdateUI, UpdateAllUI);
     }
 
@@ -77,7 +75,6 @@ public class UI_Player : MonoBehaviour
                 abilitySlots.Add(slot);
             }
         }
-
         if (PlayerStats.Instance.GetMaxHearts > heart_States.Count)
         {
             var newSlots = PlayerStats.Instance.GetMaxHearts - heart_States.Count;
@@ -101,6 +98,7 @@ public class UI_Player : MonoBehaviour
             }
         }
 
+        UpdateSliderExperience();
         HeartManagement();
     }
 
@@ -162,22 +160,14 @@ public class UI_Player : MonoBehaviour
 
     #region Level
 
-    private void SetExperience(object exp)
-    {
-        currentExperience += (float)exp;
-        UpdateSliderExperience();
-    }
     private void LevelUp(object level)
     {
-        currentExperience = 0;
-
         UpdateSliderExperience();
         InstantiateUpgrades();
     }
-
     private void UpdateSliderExperience()
     {
-        sliderExperience.value = currentExperience;
+        sliderExperience.value = stats.CurrentExperience;
     }
 
     private void InstantiatePoolCards()
@@ -189,7 +179,6 @@ public class UI_Player : MonoBehaviour
             cardsPooling.Add(card);
         }
     }
-
     private void InstantiateUpgrades()
     {
         if (upgradeCard == null || cardsPooling.Count == 0) return;
@@ -218,7 +207,7 @@ public class UI_Player : MonoBehaviour
         AbilityBasicData data = card.UpgradeData;
         if (data == null) { Debug.LogWarning("NO AVALIABLE DATA"); return; }
 
-        if (data.singleUse)
+        if (data.GetBasicData().automaticUse)
         {
             AbilityController.Instance.StartPlayerAbility(data);
             ResumeGame();
@@ -231,7 +220,7 @@ public class UI_Player : MonoBehaviour
         //UNLOCK ABILITY
         if (data.upgradeType == UpgradeType.NewAbility)
         {
-            EventManager.Instance.TriggerEvent(CombatEvents.OnUnlockAbility, data.typeAbility);
+            EventManager.Instance.TriggerEvent(CombatEvents.OnUnlockAbility, data.newAbilityData.type);
         }
 
         currentSlot.ResetSlot(data);

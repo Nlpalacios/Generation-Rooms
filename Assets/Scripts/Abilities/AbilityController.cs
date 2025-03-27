@@ -15,14 +15,12 @@ public class AbilityController : MonoBehaviour
     {
         Instance = this;
     }
-
     private void OnEnable()
     {
         EventManager.Instance.Subscribe(CombatEvents.OnUnlockAbility, AddAbility);
         EventManager.Instance.Subscribe(CombatEvents.OnStartPlayerAbility, StartPlayerAbility);
         EventManager.Instance.Subscribe(CombatEvents.OnStartAbility, StartAbility);
     }
-
     private void OnDisable()
     {
         EventManager.Instance.Unsubscribe(CombatEvents.OnUnlockAbility, AddAbility);
@@ -52,7 +50,7 @@ public class AbilityController : MonoBehaviour
         AbilityBasicData type = (AbilityBasicData)call;
         if (call == null) return;
 
-        IAbility ability = GetAbility(type.typeAbility);
+        IAbility ability = GetAbility(type.newAbilityData.type);
         if (ability != null)
         {
             ability.ActivateAbility();

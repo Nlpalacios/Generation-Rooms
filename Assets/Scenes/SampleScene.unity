@@ -725,7 +725,6 @@ MonoBehaviour:
   upgradeCard: {fileID: 8390470256582872637, guid: e87f1ea596251a04ba659092606cc5dc, type: 3}
   cardContainer: {fileID: 332206442}
   cardPanel: {fileID: 854904824}
-  currentExperience: 0
   abilityItemTransform: {fileID: 668372334}
   abilitySlotPrefab: {fileID: 6913626378612523156, guid: c5ee91df4f058ec4f92a6f19fb48bf96, type: 3}
 --- !u!114 &287753536
@@ -1809,7 +1808,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1202406096237215737, guid: 15ad28a15865934418642d450c598e71, type: 3}
       propertyPath: initialMaxExperience
-      value: 20
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 1621297279266332145, guid: 15ad28a15865934418642d450c598e71, type: 3}
       propertyPath: inputsTypeName.Array.size

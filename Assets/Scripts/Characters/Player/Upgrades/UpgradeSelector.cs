@@ -45,7 +45,6 @@ public class UpgradeSelector : MonoBehaviour
 
         currentPercents = constantPercents;
     }
-
     public AbilityBasicData GenerateData()
     {
         const int maxAttempts = 100;
@@ -75,7 +74,6 @@ public class UpgradeSelector : MonoBehaviour
         Debug.Log("GenerateData: No se pudo generar un upgrade válido después de varios intentos.");
         return null;
     }
-
     private AbilityBasicData TryGeneratePlayerUpgrade()
     {
         int specialUpgrade = GetRandomIndex(100);
@@ -95,7 +93,6 @@ public class UpgradeSelector : MonoBehaviour
 
         return ConfigurePlayerUpgradeData(posibleUpgrades.Item1, posibleUpgrades.Item2);
     }
-
     private AbilityBasicData TryGenerateAbilityUpgrade()
     {
         if (currentUpgradeCards >= totalUpgradeCards || !AbilityController.Instance.HasAbilities())
@@ -125,7 +122,6 @@ public class UpgradeSelector : MonoBehaviour
         currentUpgradeCards++;
         return ConfigureAbilityUpgradeData(ability, upgrade);
     }
-
     private AbilityBasicData TryGenerateNewAbility()
     {
         List<NameAbility> totalAbilities = Enum.GetValues(typeof(NameAbility)).Cast<NameAbility>()
@@ -149,6 +145,8 @@ public class UpgradeSelector : MonoBehaviour
         currentAbilityCards++;
         return ConfigureNewAbilityData(newAbility);
     }
+
+
     private AbilityUpgrades SelectUpgrade(NameAbility ability)
     {
         List<AbilityUpgrades> abilityUpgrades = new List<AbilityUpgrades>();
@@ -180,57 +178,30 @@ public class UpgradeSelector : MonoBehaviour
         return abilityUpgrades[GetRandomIndex(abilityUpgrades.Count)];
     }
 
+
     private AbilityBasicData ConfigureNewAbilityData(NameAbility ability)
     {
-        AbilityBaseData currentAbility = AbilityController.Instance.database.GetAbilityData(ability);
+        SO_NewAbility currentAbility = AbilityController.Instance.database.GetAbilityData(ability);
         if (currentAbility == null) { Debug.LogError("NOT FIND UPGRADE DATA"); return null; }
-         
-        AbilityBasicData data = new AbilityBasicData
+
+        currentAbility.type = ability;
+        return new AbilityBasicData(currentAbility, UpgradeType.NewAbility);
+    }
+    private AbilityBasicData ConfigureAbilityUpgradeData(NameAbility ability, AbilityUpgrades upgradeData)
+    {
+        SO_NewAbility currentAbility = AbilityController.Instance.database.GetAbilityData(ability);
+
+        UpgradeData dataAbility = new UpgradeData()
         {
-            name = currentAbility.abilityName,
-            description = currentAbility.description,
-
-            upgradeType = UpgradeType.NewAbility,
-            typeAbility = ability,
-
-            playerUpgrades = PlayerBasicStats.None,
-            abilityUpgrades = AbilityUpgrades.None,
+            nameAbility = ability,
+            typeUpgrade = upgradeData,
+            upgradeValue = GetRandomIndex(currentAbility.GetMaxValues(upgradeData)),
 
             icon = currentAbility.icon,
         };
 
-        return data;
+        return new AbilityBasicData(dataAbility, UpgradeType.AbilityUpgrade); 
     }
-    private AbilityBasicData ConfigureAbilityUpgradeData(NameAbility ability, AbilityUpgrades upgradeData)
-    {
-        SO_NewAbility dataAbility = null;
-        AbilityBaseData currentAbility = AbilityController.Instance.database.GetAbilityData(ability);
-
-        if (currentAbility  != null && currentAbility is SO_NewAbility)
-        {
-            dataAbility = (SO_NewAbility)currentAbility;
-        } 
-        else
-        {
-            Debug.LogError("NOT FIND UPGRADE DATA");
-            return null; 
-        }
-
-        AbilityBasicData data = new AbilityBasicData
-        {
-            upgradeType = UpgradeType.AbilityUpgrade,
-            playerUpgrades = PlayerBasicStats.None,
-
-            typeAbility = ability,
-            abilityUpgrades = upgradeData,
-
-            valueUpgrade = GetRandomIndex(dataAbility.GetMaxValues(upgradeData)),
-            icon = dataAbility.icon,
-        };
-
-        return data;
-    }
-
     private AbilityBasicData ConfigurePlayerUpgradeData(PlayerBasicStats upgrade, float value, bool specialUpgrade = false)
     {
         AbilityBasicData data = null;
@@ -238,23 +209,7 @@ public class UpgradeSelector : MonoBehaviour
         if (specialUpgrade)
         {
             SO_PlayerAbility specialPlayerUpgrade = AbilityController.Instance.database.GetRandomPlayerAbility();
-
-            data = new AbilityBasicData
-            {
-                upgradeType = UpgradeType.playerUpgrade,
-
-                playerUpgrades = specialPlayerUpgrade.type,
-                valueUpgrade = specialPlayerUpgrade.upgradeValue,
-
-                name = specialPlayerUpgrade.name,
-                description = specialPlayerUpgrade.description,
-
-                singleUse = specialPlayerUpgrade.singleUse,
-                restoreHearts = specialPlayerUpgrade.restoreHearts,
-
-                icon = specialPlayerUpgrade.icon
-            };
-
+            data = new AbilityBasicData(specialPlayerUpgrade, UpgradeType.playerUpgrade);
             return data;
         }
 
@@ -269,21 +224,18 @@ public class UpgradeSelector : MonoBehaviour
 
         if (valuesUpgrade == null) { Debug.LogError("NOT FIND PLAYER UPGRADES VALUES"); return null; }
 
-        data = new AbilityBasicData
-        {
-            upgradeType = UpgradeType.playerUpgrade,
+        SO_PlayerAbility playerAbilityData = ScriptableObject.CreateInstance<SO_PlayerAbility>();
 
-            playerUpgrades = upgrade,
-            abilityValues = valuesUpgrade,
-            valueUpgrade = value,
-
-            singleUse = specialUpgrade,
-            icon = GetPlayerUpgradeIcon(upgrade)
-        };
+        //data
+        playerAbilityData.type = upgrade;
+        playerAbilityData.upgradeValue = value;
+        playerAbilityData.basicValues = valuesUpgrade;
+        playerAbilityData.automaticUse = specialUpgrade;
+        playerAbilityData.icon = GetPlayerUpgradeIcon(upgrade);
 
         if (upgrade == PlayerBasicStats.totalCards || upgrade == PlayerBasicStats.totalUpgrades)
         {
-            data.singleUse = true;
+            playerAbilityData.automaticUse = true;
         }
 
         switch (upgrade)
@@ -293,8 +245,8 @@ public class UpgradeSelector : MonoBehaviour
                 float chanceRestoreHearts = Random.value;
                 if (chanceRestoreHearts < HEART_RESTORE_CHANCE)
                 {
-                    data.restoreHearts = true;
-                    data.valueUpgrade = 0;
+                    playerAbilityData.restoreHearts = true;
+                    playerAbilityData.upgradeValue = 0;
                 }
 
             break;
@@ -303,10 +255,10 @@ public class UpgradeSelector : MonoBehaviour
         float chanceSingleUse = Random.value;
         if (chanceSingleUse < 0.6)
         {
-            data.singleUse = true;
+            playerAbilityData.automaticUse = true;
         }
 
-        return data;
+        return new AbilityBasicData(playerAbilityData, UpgradeType.playerUpgrade);
     }
 
     private Sprite GetPlayerUpgradeIcon(PlayerBasicStats typeUpgrade)
@@ -331,7 +283,6 @@ public class UpgradeSelector : MonoBehaviour
 
         return icon;
     }
-
     private void AdjustProbabilities()
     {
         float total = currentPercents.newAbilityPercent + currentPercents.playerUpgradePercent + currentPercents.abilityUpgradePercent;

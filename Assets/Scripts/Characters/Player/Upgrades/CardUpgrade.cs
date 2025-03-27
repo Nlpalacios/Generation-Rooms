@@ -1,5 +1,6 @@
 using System;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -33,31 +34,33 @@ public class CardUpgrade : MonoBehaviour
         if (upgradeData == null) { Debug.Log("data null"); return; }
 
         //Set card icon
-        icon.sprite = data.icon;
-        Debug.Log(data.name);
+        icon.sprite = data.GetBasicData().icon;
+        Debug.Log(data.GetBasicData().name);
 
         if (data.upgradeType == UpgradeType.playerUpgrade)
         {
+            SO_PlayerAbility dataAbility = data.playerAbilityData;
+
             //Set card texts
             tmp_name.text = UpgradesName.NewUpgradeName;
             tmp_typeCard.text = UpgradesName.NewUpgrade;
 
-            if (string.IsNullOrEmpty(data.description))
+            if (string.IsNullOrEmpty(data.playerAbilityData.description))
             {
-                tmp_Description.text = $"+{(int)data.valueUpgrade} {data.playerUpgrades.ToString().ToLower()}";
+                tmp_Description.text = $"+{(int)dataAbility.upgradeValue} {dataAbility.type.ToString().ToLower()}";
             }
             else
-                tmp_Description.text = data.description;
+                tmp_Description.text = dataAbility.description;
 
             return;
         }
 
-        SO_NewAbility ability = AbilityController.Instance.database.GetAbilityData(data.typeAbility);
+        SO_NewAbility ability = data.newAbilityData;
 
         if (data.upgradeType == UpgradeType.NewAbility)
         {
             tmp_typeCard.text = UpgradesName.NewAbility;
-            tmp_name.text = data.typeAbility.ToString().ToLower();
+            tmp_name.text = ability.abilityName.ToString().ToLower();
 
             tmp_Description.text = string.Format(
              "{0}{1}\n{2}{3}\n{4}{5}\n{6}{7}",
@@ -72,9 +75,9 @@ public class CardUpgrade : MonoBehaviour
 
         tmp_typeCard.text = UpgradesName.NewAbilityUpgrade;
 
-        Debug.Log(data.name);
-        tmp_name.text = string.IsNullOrEmpty(data.name) ? data.typeAbility.ToString().ToLower():
-                                                          data.name.ToLower();
+        Debug.Log(data.GetBasicData().name);
+        tmp_name.text = string.IsNullOrEmpty(data.GetBasicData().name) ? data.GetBasicData().abilityType.ToString().ToLower() :
+                                                          data.GetBasicData().name.ToLower();
 
         float damageValue = ability.basicValues.damage;
         float rangeValue = ability.basicValues.range;
@@ -82,35 +85,35 @@ public class CardUpgrade : MonoBehaviour
         float delayValue = ability.basicValues.delay;
 
         float upgradeValue = 0f;
+        upgradeValue = data.upgradeData.upgradeValue;
 
-        switch (data.abilityUpgrades)
+        switch (data.upgradeData.typeUpgrade)
         {
             case AbilityUpgrades.damage:
-                upgradeValue = data.valueUpgrade;
                 damageValue += upgradeValue;
                 break;
 
             case AbilityUpgrades.range:
-                upgradeValue = data.valueUpgrade;
                 rangeValue += upgradeValue;
                 break;
 
             case AbilityUpgrades.exp:
-                upgradeValue = data.valueUpgrade;
                 expValue += upgradeValue;
                 break;
 
             case AbilityUpgrades.delay:
-                upgradeValue = -data.valueUpgrade;
+                upgradeValue = - data.upgradeData.upgradeValue;
                 delayValue += upgradeValue;
                 break;
         }
 
-        if (!string.IsNullOrEmpty(data.description))
+        if (!string.IsNullOrEmpty(data.GetBasicData().description))
         {
-            tmp_Description.text = data.description.ToLower();
+            tmp_Description.text = data.GetBasicData().description.ToLower();
             return;
         }
+
+        AbilityUpgrades typeUpgrade = data.upgradeData.typeUpgrade;
 
         tmp_Description.text = string.Format("{0}{1}{8}\n{2}{3}{9}\n{4}{5}s{10}\n{6}{7}{11}",
          UpgradesName.damage, ability.basicValues.damage,
@@ -118,9 +121,11 @@ public class CardUpgrade : MonoBehaviour
          UpgradesName.delay, ability.basicValues.delay,
          UpgradesName.exp, ability.basicValues.expCost,
 
-          data.abilityUpgrades == AbilityUpgrades.damage && upgradeValue != 0 ? $" {upgradeValue:+0.##}" : "",
-          data.abilityUpgrades == AbilityUpgrades.range && upgradeValue != 0 ? $" {upgradeValue:+0.##}" : "",
-          data.abilityUpgrades == AbilityUpgrades.delay && upgradeValue != 0 ? $" {-Math.Abs(upgradeValue):0.##s}" : "",
-          data.abilityUpgrades == AbilityUpgrades.exp && upgradeValue != 0 ? $" {-Math.Abs(upgradeValue):0.##}" : "");
+
+          typeUpgrade == AbilityUpgrades.damage && upgradeValue != 0 ? $" {upgradeValue:+0.##}" : "",
+          typeUpgrade == AbilityUpgrades.range && upgradeValue != 0 ? $" {upgradeValue:+0.##}" : "",
+          typeUpgrade == AbilityUpgrades.delay && upgradeValue != 0 ? $" {-Math.Abs(upgradeValue):0.##s}" : "",
+          typeUpgrade == AbilityUpgrades.exp && upgradeValue != 0 ? $" {-Math.Abs(upgradeValue):0.##}" : "");
+
     }
 }

@@ -16,7 +16,7 @@ MonoBehaviour:
   abilityType: 0
   description: Speed +5
   icon: {fileID: 21300428, guid: c2957f4d831870a48af4ec016652548d, type: 3}
-  singleUse: 1
+  automaticUse: 1
   type: 0
   upgradeValue: 5
   basicValues:

@@ -6,6 +6,7 @@ using Random = UnityEngine.Random;
 using System.Collections.Generic;
 using System.Linq;
 using static UnityEngine.Rendering.DebugUI;
+using UnityEditor.PackageManager;
 
 public class PlayerStats : MonoBehaviour, IHealthCharacterControl
 {
@@ -43,6 +44,7 @@ public class PlayerStats : MonoBehaviour, IHealthCharacterControl
     public float MaxExperience { get => initialMaxExperience; set => initialMaxExperience = value; }
     public int CurrentMaxCards { get => currentMaxCards; set => currentMaxCards = value; }
     public int CurrentMaxSlotsAbilities { get => currentMaxSlotsAbilities; set => currentMaxSlotsAbilities = value; }
+    public float CurrentExperience { get => currentExperience; set => currentExperience = value; }
 
     public Action OnPlayerDeath;
 
@@ -79,9 +81,10 @@ public class PlayerStats : MonoBehaviour, IHealthCharacterControl
         var upgradeValues = (AbilityBasicData)call;
         if (upgradeValues == null) { Debug.LogError("CORRUPTED OR NULL DATA");  return; }
 
-        var value = upgradeValues.valueUpgrade;
+        SO_PlayerAbility playerAbilityData = upgradeValues.playerAbilityData;
+        var value = playerAbilityData.upgradeValue;
 
-        switch (upgradeValues.playerUpgrades)
+        switch (playerAbilityData.type)
         {
             case PlayerBasicStats.None:
                 break;
@@ -98,9 +101,9 @@ public class PlayerStats : MonoBehaviour, IHealthCharacterControl
 
             case PlayerBasicStats.hearts:
 
-                if (upgradeValues.singleUse)
+                if (playerAbilityData.automaticUse)
                 {
-                    ModifyHearts((int)value, upgradeValues.restoreHearts);
+                    ModifyHearts((int)value, playerAbilityData.restoreHearts);
                 }
                 else
                 {
@@ -173,16 +176,17 @@ public class PlayerStats : MonoBehaviour, IHealthCharacterControl
     #region Experience
     private void SetExperience(object exp)
     {
-        currentExperience += (float)exp;
+        CurrentExperience += (float)exp;
+        UpdateUI();
 
-        if (currentExperience >= MaxExperience)
+        if (CurrentExperience >= MaxExperience)
         {
             LevelUp();
         }
     }
     private void LevelUp()
     {
-        currentExperience = 0;
+        CurrentExperience = 0;
         playerLevel++;
 
         EventManager.Instance.TriggerEvent(PlayerEvents.OnLevelUp, playerLevel);
@@ -250,5 +254,14 @@ public class PlayerStats : MonoBehaviour, IHealthCharacterControl
     private void UpdateUI()
     {
         EventManager.Instance.TriggerEvent(PlayerEvents.OnUpdateUI);
+    }
+    public bool UseAbility(int amount)
+    {
+        if (amount > CurrentExperience) return false;
+
+        CurrentExperience -= amount;
+        UpdateUI();
+
+        return true;
     }
 }

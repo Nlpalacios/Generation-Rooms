@@ -14,8 +14,17 @@ public abstract class AbilityBaseData : ScriptableObject
     public Sprite icon;
 
     [Header("Use")]
-    public bool singleUse = false;
+    public bool automaticUse = false;
 }
+
+public class UpgradeData : AbilityBaseData
+{
+    public NameAbility nameAbility;
+    public AbilityUpgrades typeUpgrade;
+
+    public int upgradeValue = 0;
+}
+
 
 [Serializable]
 public class AbilityValues

@@ -105,13 +105,13 @@ public class NewItem : MonoBehaviour
 
         if (typeItem == TypeItem.player)
         {
-            AbilityBasicData data = new AbilityBasicData()
-            {
-                upgradeType = UpgradeType.playerUpgrade,
-                playerUpgrades = PlayerBasicStats.hearts,
-
-                valueUpgrade = playerItem == PlayerItems.NewHeart ? 2 : 1,
+            SO_PlayerAbility newPlayerAbility = new SO_PlayerAbility()
+            { 
+                type = PlayerBasicStats.hearts,
+                upgradeValue = playerItem == PlayerItems.NewHeart ? 2 : 1,
             };
+
+            AbilityBasicData data = new AbilityBasicData(newPlayerAbility, UpgradeType.playerUpgrade);
 
             EventManager.Instance.TriggerEvent(PlayerEvents.OnReceiveUpgrade, data);
             return;
