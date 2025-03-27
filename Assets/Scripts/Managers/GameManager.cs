@@ -27,6 +27,7 @@ public class GameManager : MonoBehaviour
     public RoomSettings GetCurrentRoom { get => currentRoom; }
     public Player GetPlayer => playerReference; 
     public playerState GetCurrentState { get => gameState; set => gameState = value; }
+    public int GetCurrentLoop { get => currentLoop; set => currentLoop = value; }
 
     private List<PlayerItems> ItemsUnlockeds = new List<PlayerItems>();
 
@@ -43,6 +44,12 @@ public class GameManager : MonoBehaviour
         EventManager.Instance.Subscribe(GameWorldEvents.OnChangeState, SetPlayerState);
         EventManager.Instance.Subscribe(GameWorldEvents.OnFinishLoop, FinishLoop);
     }
+    private void OnDisable()
+    {
+        EventManager.Instance.Unsubscribe(GameWorldEvents.OnChangeState, SetPlayerState);
+        EventManager.Instance.Unsubscribe(GameWorldEvents.OnFinishLoop, FinishLoop);
+    }
+
     void Awake()
     {
         if (Instance == null)
